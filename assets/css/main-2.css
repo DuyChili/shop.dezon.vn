@@ -2296,3 +2296,63 @@ margin-bottom: 80px;
   color: #fff;
 }
 
+/*  */
+.supplier_menu .scroll-menu {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden;
+    white-space: nowrap;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-left: 0;
+    margin-bottom: 0;
+    list-style: none;
+    width: 100%;
+    cursor: grab;
+    cursor: -webkit-grab;
+    user-select: none; 
+    -webkit-user-select: none;
+}
+
+.supplier_menu .scroll-menu.active {
+    cursor: grabbing;
+    cursor: -webkit-grabbing;
+}
+
+.supplier_menu .scroll-menu::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+.supplier_menu .scroll-menu li {
+    flex: 0 0 auto;
+    padding: 12px 24px;
+}
+
+@media (max-width: 767px) {
+    .supplier_menu .scroll-menu li {
+        padding: 12px 15px;
+    }
+}
+
+/* Ví dụ CSS */
+.supplier_menu .scroll-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 20px;
+    overflow-x: auto; /* Cho phép cuộn ngang trên mobile */
+    white-space: nowrap;
+}
+
+.supplier_menu .scroll-menu li a {
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+    padding-bottom: 5px;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s;
+}

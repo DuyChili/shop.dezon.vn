@@ -6136,7 +6136,7 @@ body .btn:hover.btn-bgblack img {
 
 .space_post .list_post .post_item .meta_info .post_title {
     display: -webkit-box;
-    height: 39px;
+    /* height: 59px; */
     overflow: hidden;
     text-overflow: ellipsis;
     line-clamp: 2;
@@ -6168,7 +6168,7 @@ body .btn:hover.btn-bgblack img {
     }
 
     .space_post .list_post .post_item .meta_info .post_title {
-        height: 44px;
+        /* height: 44px; */
     }
 
     .space_post .list_post .post_item .meta_info .desc p {
@@ -10166,4 +10166,13 @@ html body .related-item-custom .title-area {
 .item-logout:hover {
     background-color: #fff5f5 !important;
 }
+/* Đè mọi thứ */
+.fancybox__container {
+    z-index: 2147483647 !important; /* Mức cao nhất của trình duyệt */
+}
 
+/* Đảm bảo ảnh hiện rõ */
+.fancybox__content {
+    opacity: 1 !important;
+    visibility: visible !important;
+}

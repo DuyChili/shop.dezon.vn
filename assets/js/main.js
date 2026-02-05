@@ -309,6 +309,20 @@ jQuery(document).ready(function () {
   App.menuMobile();
   Fancybox.unbind("[data-fancybox]");
   Fancybox.close();
+  Fancybox.bind('[data-fancybox="supplier-gallery"]', {
+    groupAll : true,
+    Thumbs : {
+        autoStart : true
+    }
+});
+    Fancybox.bind('[data-fancybox="supplier-video"]', {
+        groupAll : true,
+        Html: {
+            video: {
+                autoplay: true,
+            },
+        },
+    });
   jQuery(document).on('click', '.product_gallery a[data-fancybox="gallery"]', function(e) {
       e.preventDefault(); 
       var $uniqueLinks = jQuery('.product_gallery .slick-slide:not(.slick-cloned) a[data-fancybox="gallery"]');
@@ -698,4 +712,13 @@ jQuery(document).ready(function ($) {
         }
     });
 
+});
+document.addEventListener("DOMContentLoaded", function () {
+    var tocHeader = document.querySelector('.decox-toc-wrapper .toc-header');
+    var tocWrapper = document.getElementById('decox_toc');
+    if (tocHeader && tocWrapper) {
+        tocHeader.addEventListener('click', function () {
+            tocWrapper.classList.toggle('toc-closed');
+        });
+    }
 });

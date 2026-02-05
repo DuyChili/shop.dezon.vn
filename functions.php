@@ -20,6 +20,8 @@ function my_theme_enqueue_assets() {
     wp_enqueue_script('fancybox', get_template_directory_uri() . '/assets/js/fancybox.umd.js', array(), null, true);
     wp_enqueue_script('main-script', get_template_directory_uri() . '/assets/js/main.js', array('jquery'), '2.2', true);
     wp_enqueue_script('api-render-script', get_template_directory_uri() . '/assets/js/api-render.js', array('jquery'), '2.3', true);
+    wp_enqueue_script('load-more-script', get_template_directory_uri() . '/assets/js/load-more.js', array('jquery'), '1.0', true);
+    // wp_enqueue_script('main-2-script', get_template_directory_uri() . '/assets/js/main-2.js', array('jquery'), '2.2', true);
     
     // =====================================================
     // QUAN TRỌNG: Truyền biến PHP xuống JavaScript
@@ -30,6 +32,11 @@ function my_theme_enqueue_assets() {
         'iconNext'     => get_template_directory_uri() . '/assets/images/last.svg',
         'ajaxUrl'      => admin_url('admin-ajax.php'),
         'restUrl'      => rest_url('theme/v1/'),
+    ));
+
+    wp_localize_script('load-more-script', 'my_ajax_object', array(
+        'ajax_url' => admin_url('admin-ajax.php'),
+        'nonce'    => wp_create_nonce('ajax-nonce')
     ));
 
     
@@ -136,16 +143,48 @@ function get_cached_dezon_posts($request) {
 // =====================================================
 function clear_dezon_posts_cache() {
     global $wpdb;
+
+    // 1. Xóa cache bài viết Dezon (News)
     $wpdb->query(
         "DELETE FROM {$wpdb->options} 
          WHERE option_name LIKE '_transient_dezon_posts_page_%' 
          OR option_name LIKE '_transient_timeout_dezon_posts_page_%'"
     );
 
+    // 2. Xóa cache Dự án (List & Count)
+    // remote_proj_% sẽ xóa cả 'remote_proj_123' và 'remote_proj_count_123'
     $wpdb->query(
         "DELETE FROM {$wpdb->options} 
          WHERE option_name LIKE '_transient_remote_proj_%' 
          OR option_name LIKE '_transient_timeout_remote_proj_%'"
+    );
+
+    // 3. Xóa cache Đối tác (CẬP NHẬT MỚI)
+    // Thêm dòng 'partners_ids_of_sup' vì đây là key chứa danh sách ID đối tác ta vừa tạo
+    $wpdb->query(
+        "DELETE FROM {$wpdb->options} 
+         WHERE option_name LIKE '_transient_partners_of_sup_%' 
+         OR option_name LIKE '_transient_timeout_partners_of_sup_%'
+         OR option_name LIKE '_transient_partners_ids_of_sup_%' 
+         OR option_name LIKE '_transient_timeout_partners_ids_of_sup_%'
+         OR option_name LIKE '_transient_remote_partners_%'
+         OR option_name LIKE '_transient_timeout_remote_partners_%'"
+    );
+
+    // 4. Xóa cache Gallery & Danh sách dự án liên kết (Admin)
+    $wpdb->query(
+        "DELETE FROM {$wpdb->options} 
+         WHERE option_name LIKE '_transient_supplier_full_gallery_%' 
+         OR option_name LIKE '_transient_timeout_supplier_full_gallery_%'
+         OR option_name LIKE '_transient_remote_all_project_list'
+         OR option_name LIKE '_transient_timeout_remote_all_project_list'"
+    );
+
+    // 5. Xóa cache Tài liệu (Documents)
+    $wpdb->query(
+        "DELETE FROM {$wpdb->options} 
+         WHERE option_name LIKE '_transient_supplier_documents_list_v2_%' 
+         OR option_name LIKE '_transient_timeout_supplier_documents_list_v2_%'"
     );
 }
 
@@ -673,14 +712,8 @@ function auto_sync_supplier_to_woo_brand_with_image($post_id) {
     $image_id = get_post_thumbnail_id($post_id);
 
     if ($image_id) {
-        // Cách 1: Chuẩn WooCommerce & WordPress (Hầu hết các theme dùng cái này)
         update_term_meta($term_id, 'thumbnail_id', $image_id);
-        
-        // Cách 2: Chuẩn của Plugin "Perfect Brands for WooCommerce" (Nếu bạn dùng plugin này)
         update_term_meta($term_id, 'pwb_brand_image', $image_id);
-        
-        // Cách 3: Nếu Brand dùng ACF để lưu ảnh (trường hợp ít gặp nhưng có thể xảy ra)
-        // update_field('field_name_cua_anh_brand', $image_id, $taxonomy_slug . '_' . $term_id);
     }
 
     // 5. Đồng bộ Product (Gán Brand vào Product)
@@ -1017,12 +1050,193 @@ class Dezon_Remote_Project_Fetcher {
         return (string)$views;
     }
 
+
+    public function get_partners_via_supplier_projects( $current_supplier_id, $limit = 15, $offset = 0 ) {
+        error_log("DEBUG PARTNER: Supplier ID: $current_supplier_id - Limit nhận được: $limit - Offset: $offset");
+        // 1. Key cache lưu toàn bộ ID (để dùng chung cho mọi trang)
+        $cache_key = 'partners_ids_of_sup_' . $current_supplier_id;
+        $studio_ids = get_transient( $cache_key );
+
+        if ( false === $studio_ids ) {
+            $remote_db = $this->get_connection();
+            if ( ! empty( $remote_db->error ) ) return [];
+
+            // Query lấy TOÀN BỘ ID Studio
+            $supplier_search = '%"' . $remote_db->esc_like( $current_supplier_id ) . '"%';
+            $query = $remote_db->prepare(
+                "SELECT DISTINCT m2.meta_value 
+                FROM {$this->table_prefix}postmeta m1
+                INNER JOIN {$this->table_prefix}postmeta m2 ON m1.post_id = m2.post_id
+                WHERE m1.meta_key = 'supplier_selected_suppliers' 
+                AND m1.meta_value LIKE %s
+                AND m2.meta_key = 'project_studio'
+                AND m2.meta_value != ''", 
+                $supplier_search
+            );
+            
+            $studio_meta_values = $remote_db->get_col( $query );
+
+            // Xử lý ID và lọc trùng
+            $temp_ids = [];
+            if ( $studio_meta_values ) {
+                foreach ( $studio_meta_values as $meta_val ) {
+                    $data = maybe_unserialize( $meta_val );
+                    if ( is_array($data) ) {
+                        $temp_ids = array_merge($temp_ids, $data);
+                    } elseif ( is_numeric($data) ) {
+                        $temp_ids[] = $data;
+                    }
+                }
+            }
+            $studio_ids = array_unique( array_filter( array_map('intval', $temp_ids) ) );
+            
+            set_transient( $cache_key, $studio_ids, 1 * HOUR_IN_SECONDS );
+        }
+
+        if ( empty($studio_ids) ) return [];
+
+        // 2. Cắt mảng ID theo limit/offset (Logic phân trang)
+        $sliced_ids = ($limit > 0) ? array_slice($studio_ids, $offset, $limit) : $studio_ids;
+
+        if ( empty($sliced_ids) ) return [];
+
+        // 3. Query lấy thông tin chi tiết
+        $remote_db = $this->get_connection(); 
+        $ids_placeholder = implode(',', $sliced_ids);
+        
+        $partners_query = "SELECT ID, post_title, post_name 
+                        FROM {$this->table_prefix}posts 
+                        WHERE ID IN ($ids_placeholder) 
+                        AND post_status = 'publish'";
+        
+        $posts = $remote_db->get_results( $partners_query );
+        $partners_data = [];
+
+        if ( $posts ) {
+            foreach ( $posts as $post ) {
+                $partners_data[] = [
+                    'id'    => $post->ID,
+                    'title' => $post->post_title,
+                    'link'  => self::REMOTE_SITE_URL . '/studio/' . $post->post_name . '/',
+                    'logo'  => $this->get_remote_featured_image_url($remote_db, $post->ID),
+                ];
+            }
+        }
+
+        return $partners_data;
+    }
+    private function get_remote_featured_image_url( $db, $post_id ) {
+        $thumb_id = $db->get_var( $db->prepare( "SELECT meta_value FROM {$this->table_prefix}postmeta WHERE post_id = %d AND meta_key = '_thumbnail_id'", $post_id ));
+        if ( $thumb_id ) {
+            $file_path = $db->get_var( $db->prepare( "SELECT meta_value FROM {$this->table_prefix}postmeta WHERE post_id = %d AND meta_key = '_wp_attached_file'", $thumb_id ));
+            if ( $file_path ) return self::REMOTE_SITE_URL . '/wp-content/uploads/' . $file_path;
+        }
+        return get_template_directory_uri() . '/assets/images/partner-default.png'; // Fallback image
+    }
+
     // 5. Check AI Content
     private function check_remote_ai_content( $db, $post_id ) {
-        // ACF lưu group field content_for_ai -> subfield content
-        // Key trong DB thường là 'content_for_ai_content'
         $ai_content = $db->get_var( "SELECT meta_value FROM {$this->table_prefix}postmeta WHERE post_id = $post_id AND meta_key = 'content_for_ai_content'" );
         return !empty($ai_content);
+    }
+
+    public function get_remote_projects_linked_to_supplier( $local_supplier_id ) {
+    
+        $remote_db = $this->get_connection();
+        if ( ! empty( $remote_db->error ) ) return [];
+        
+        $like_query = '%"' . $remote_db->esc_like( $local_supplier_id ) . '"%';
+
+        // Query tối ưu: Join bảng Posts và Postmeta
+        $query = $remote_db->prepare(
+            "SELECT p.ID, p.post_title
+            FROM {$this->table_prefix}posts p
+            INNER JOIN {$this->table_prefix}postmeta pm ON p.ID = pm.post_id
+            WHERE p.post_type = 'project'
+            AND p.post_status = 'publish'
+            AND pm.meta_key = 'supplier_selected_suppliers' 
+            AND pm.meta_value LIKE %s
+            ORDER BY p.post_date DESC",
+            $like_query
+        );
+
+        $results = $remote_db->get_results( $query );
+
+        $choices = [];
+        if ( $results ) {
+            foreach ( $results as $p ) {
+                $choices[ $p->ID ] = $p->post_title;
+            }
+        }
+        
+        return $choices;
+    }
+
+    public function count_total_projects( $current_supplier_id ) {
+        $cache_key = 'remote_proj_count_' . $current_supplier_id;
+        $count = get_transient( $cache_key );
+
+        if ( false !== $count ) {
+            return $count;
+        }
+
+        $remote_db = $this->get_connection();
+        if ( ! empty( $remote_db->error ) ) return 0;
+
+        $like_query = '%' . $remote_db->esc_like( '"' . $current_supplier_id . '"' ) . '%';
+
+        // Chỉ đếm số lượng ID
+        $query = $remote_db->prepare(
+            "SELECT COUNT(DISTINCT p.ID) 
+             FROM {$this->table_prefix}posts p
+             INNER JOIN {$this->table_prefix}postmeta pm ON p.ID = pm.post_id
+             WHERE p.post_type = 'project' 
+             AND p.post_status = 'publish'
+             AND (pm.meta_key = 'selected_suppliers' OR pm.meta_key = 'supplier_selected_suppliers')
+             AND pm.meta_value LIKE %s",
+            $like_query
+        );
+
+        $count = $remote_db->get_var( $query );
+        
+        // Cache 12 tiếng
+        set_transient( $cache_key, $count, 12 * HOUR_IN_SECONDS );
+
+        return (int)$count;
+    }
+
+    /**
+     * Hàm đếm tổng số đối tác (Remote)
+     */
+    public function count_total_partners( $current_supplier_id ) {
+        // Tận dụng lại cache ID của hàm get_partners_via_supplier_projects nếu có
+        $cache_key_ids = 'partners_ids_of_sup_' . $current_supplier_id;
+        $cached_ids = get_transient( $cache_key_ids );
+
+        if ( false !== $cached_ids && is_array($cached_ids) ) {
+            return count($cached_ids);
+        }
+
+        // Nếu chưa có cache ID, query đếm trực tiếp
+        $remote_db = $this->get_connection();
+        if ( ! empty( $remote_db->error ) ) return 0;
+
+        $supplier_search = '%"' . $remote_db->esc_like( $current_supplier_id ) . '"%';
+        
+        // Query đếm số lượng Studio Unique
+        $query = $remote_db->prepare(
+            "SELECT COUNT(DISTINCT m2.meta_value) 
+            FROM {$this->table_prefix}postmeta m1
+            INNER JOIN {$this->table_prefix}postmeta m2 ON m1.post_id = m2.post_id
+            WHERE m1.meta_key = 'supplier_selected_suppliers' 
+            AND m1.meta_value LIKE %s
+            AND m2.meta_key = 'project_studio'
+            AND m2.meta_value != ''", 
+            $supplier_search
+        );
+
+        $count = $remote_db->get_var( $query );
+        return (int)$count;
     }
 
 
@@ -1055,9 +1269,6 @@ function handle_load_more_supplier_projects() {
             get_template_part( 'template-parts/project', 'item', array( 'project' => $project ) );
         }
         $html = ob_get_clean();
-
-        // Kiểm tra xem còn trang tiếp theo không để ẩn nút
-        // (Cách đơn giản: Nếu số lượng lấy về < limit thì chắc chắn hết bài)
         $has_more = (count($projects) === $limit);
 
         wp_send_json_success([
@@ -1195,4 +1406,655 @@ if ( ! function_exists( 'render_supplier_cats_recursive' ) ) {
 
         if ( $level > 0 ) echo '</ul>';
     }
+}
+// Trong functions.php
+
+add_action( 'wp_ajax_load_more_partners', 'ajax_load_more_partners' );
+add_action( 'wp_ajax_nopriv_load_more_partners', 'ajax_load_more_partners' );
+
+function ajax_load_more_partners() {
+    // 1. Lấy Supplier ID
+    $supplier_id = isset($_POST['supplier_id']) ? intval($_POST['supplier_id']) : 0;
+    
+    // 2. Lấy Offset
+    $offset = isset($_POST['offset']) ? intval($_POST['offset']) : 0;
+    
+    // 3. QUAN TRỌNG: Kiểm tra kỹ biến limit
+    // Nếu JS gửi '5' -> lấy 5. Nếu không gửi -> lấy 15.
+    if ( isset($_POST['limit']) ) {
+        $limit = intval($_POST['limit']);
+    } else {
+        $limit = 15; // Mặc định nếu không nhận được gì
+    }
+
+    if ( ! $supplier_id ) wp_send_json_error('Missing Supplier ID');
+
+    $fetcher = new Dezon_Remote_Project_Fetcher();
+    
+    // 4. Gọi hàm fetch (Lúc này $limit bắt buộc phải đúng)
+    $partners = $fetcher->get_partners_via_supplier_projects( $supplier_id, $limit, $offset );
+
+    // Logic kiểm tra còn data
+    $has_more = (count($partners) >= $limit);
+
+    $html_items = [];
+    if ( ! empty( $partners ) ) {
+        foreach ( $partners as $p ) {
+            ob_start();
+            ?>
+            <a href="<?php echo esc_url($p['link']); ?>" target="_blank" class="text-reset partner-item-anim" title="<?php echo esc_attr($p['title']); ?>">
+                <div class="d-flex mb-3 align-items-center">
+                    <img src="<?php echo esc_url($p['logo']); ?>" 
+                         style="width: auto; height: 20px; object-fit: contain;" 
+                         alt="<?php echo esc_attr($p['title']); ?>">
+                    <p class="mb-0 ms-2 text-truncate"><?php echo esc_html($p['title']); ?></p>
+                </div>
+            </a>
+            <?php
+            $html_items[] = ob_get_clean();
+        }
+        
+        wp_send_json_success([
+            'items'    => $html_items,
+            'has_more' => $has_more,
+            'loaded'   => count($partners),
+            'debug_limit' => $limit // Trả về limit để bạn check trong Network tab
+        ]);
+    } else {
+        wp_send_json_error('No partners found');
+    }
+    
+    wp_die();
+}
+
+/**
+ * Đổ dữ liệu vào Select Field: related_remote_project_id
+ * Logic: Chỉ lấy các Project có liên kết với Supplier đang sửa
+ */
+add_filter('acf/load_field/name=related_remote_project_id', function( $field ) {
+    
+    // 1. Chỉ chạy trong trang Admin và phải có ID bài viết đang sửa
+    if ( ! is_admin() || ! isset($_GET['post']) ) {
+        return $field;
+    }
+
+    $current_supplier_id = intval($_GET['post']);
+
+    // 2. Gọi class Fetcher để lấy dữ liệu
+    if ( class_exists('Dezon_Remote_Project_Fetcher') ) {
+        $fetcher = new Dezon_Remote_Project_Fetcher();
+        
+        // Gọi hàm vừa viết ở Bước 2
+        $projects = $fetcher->get_remote_projects_linked_to_supplier( $current_supplier_id );
+        
+        // 3. Đổ dữ liệu vào field
+        $field['choices'] = array();
+        
+        if ( ! empty( $projects ) ) {
+            $field['choices'] = $projects;
+        } else {
+            $field['choices'][''] = 'Chưa có dự án nào bên Dezon liên kết với Supplier này';
+        }
+    }
+
+    return $field;
+});
+
+// Trong functions.php
+
+function get_supplier_gallery_flattened( $supplier_id ) {
+    $cache_key = 'supplier_full_gallery_' . $supplier_id;
+    $all_images = get_transient( $cache_key );
+
+    if ( false === $all_images ) {
+        // Lấy Repeater
+        $gallery_repeater = get_field('supplier_project_gallery', $supplier_id);
+        $all_images = [];
+
+        if ( $gallery_repeater ) {
+            foreach ( $gallery_repeater as $row ) {
+                // Lấy sub field là Gallery
+                $images = $row['project_images']; 
+                if ( $images ) {
+                    foreach ( $images as $img ) {
+                        $all_images[] = [
+                            'url'     => $img['url'],
+                            'thumb'   => $img['sizes']['medium_large'],
+                            'alt'     => $img['alt'],
+                            'caption' => $img['caption']
+                        ];
+                    }
+                }
+            }
+        }
+        set_transient( $cache_key, $all_images, 1 * HOUR_IN_SECONDS );
+    }
+    return $all_images;
+}
+
+// Hook xóa cache khi cập nhật Supplier
+add_action('save_post_supplier', function($post_id) {
+    delete_transient( 'supplier_full_gallery_' . $post_id );
+});
+
+/**
+ * 2. Ajax Handler: Xử lý Load More Gallery
+ */
+add_action( 'wp_ajax_load_more_supplier_gallery', 'ajax_load_more_supplier_gallery' );
+add_action( 'wp_ajax_nopriv_load_more_supplier_gallery', 'ajax_load_more_supplier_gallery' );
+
+function ajax_load_more_supplier_gallery() {
+    $supplier_id = isset($_POST['supplier_id']) ? intval($_POST['supplier_id']) : 0;
+    $offset      = isset($_POST['offset']) ? intval($_POST['offset']) : 0;
+    $limit       = 8; // CỐ ĐỊNH: Load thêm 8 ảnh
+
+    if ( ! $supplier_id ) wp_send_json_error();
+
+    // Lấy toàn bộ ảnh (từ cache)
+    $all_images = get_supplier_gallery_flattened( $supplier_id );
+    
+    // Cắt mảng theo offset và limit
+    $sliced_images = array_slice( $all_images, $offset, $limit );
+    $total_images  = count($all_images);
+    
+    // Kiểm tra còn ảnh nữa không
+    $has_more = ($offset + $limit) < $total_images;
+
+    $html_items = [];
+    if ( ! empty( $sliced_images ) ) {
+        foreach ( $sliced_images as $img ) {
+            ob_start();
+            ?>
+            <div class="col-lg-3 col-6 gallery-item-anim">
+                <figure class="mb-0 rounded-2 overflow-hidden position-relative hover-zoom" style="padding-bottom: 66.66%;">
+                    <a href="<?php echo esc_url($img['url']); ?>" 
+                       data-fancybox="supplier-gallery"
+                       class="d-block w-100 h-100 position-absolute top-0 start-0">
+                        <img src="<?php echo esc_url($img['thumb']); ?>"
+                             class="w-100 h-100 object-fit-cover transition-transform" 
+                             alt="<?php echo esc_attr($img['alt']); ?>">
+                    </a>
+                </figure>
+            </div>
+            <?php
+            $html_items[] = ob_get_clean();
+        }
+        
+        wp_send_json_success([
+            'items'    => $html_items,
+            'has_more' => $has_more,
+            'loaded'   => count($sliced_images)
+        ]);
+    } else {
+        wp_send_json_error();
+    }
+    
+    wp_die();
+}
+
+// Hook xóa cache khi lưu bài để cập nhật ảnh mới ngay lập tức
+add_action('save_post', function($post_id) {
+    delete_transient( 'supplier_full_gallery_' . $post_id );
+});
+
+/**
+ * 1. Helper: Lấy danh sách Tài liệu từ Repeater (Có hỗ trợ Icon động)
+ */
+function get_supplier_documents_flattened( $supplier_id ) {
+    // Thêm hậu tố _v2 để làm mới cache tránh xung đột cấu trúc cũ
+    $cache_key = 'supplier_documents_list_v2_' . $supplier_id;
+    $documents = get_transient( $cache_key );
+
+    if ( false === $documents ) {
+        $repeater = get_field('catalogue', $supplier_id);
+        $documents = [];
+
+        if ( $repeater ) {
+            foreach ( $repeater as $row ) {
+                // 1. Xử lý File URL
+                $file_url = '';
+                $file_title = '';
+                
+                if ( is_array($row['file']) ) {
+                    $file_url   = $row['file']['url'];
+                    $file_title = $row['file']['title']; // Lấy tiêu đề file gốc
+                } else {
+                    $file_url   = $row['file'];
+                    $file_title = basename($file_url);
+                }
+
+                // 2. Xử lý Icon (Ảnh đại diện)
+                $icon_url = '';
+                if ( ! empty($row['icon']) ) {
+                    // Nếu return là Array
+                    if ( is_array($row['icon']) ) {
+                        $icon_url = $row['icon']['url']; // Hoặc ['sizes']['thumbnail'] nếu muốn nhẹ
+                    } else {
+                        $icon_url = $row['icon']; // Nếu return là URL
+                    }
+                } 
+                // Fallback: Nếu không chọn icon thì dùng icon PDF mặc định của theme
+                if ( empty($icon_url) ) {
+                    $icon_url = get_template_directory_uri() . '/assets/images/img-pdf.jpg';
+                }
+
+                if ( $file_url ) {
+                    $documents[] = [
+                        'title' => $file_title,
+                        'url'   => $file_url,
+                        'icon'  => $icon_url, // URL icon đã xử lý
+                        'cate'  => $row['cate']
+                    ];
+                }
+            }
+        }
+        set_transient( $cache_key, $documents, 12 * HOUR_IN_SECONDS );
+    }
+    return $documents;
+}
+
+/**
+ * 2. Ajax Handler: Load More Documents (Cập nhật HTML trả về)
+ */
+add_action( 'wp_ajax_load_more_documents', 'ajax_load_more_documents' );
+add_action( 'wp_ajax_nopriv_load_more_documents', 'ajax_load_more_documents' );
+
+function ajax_load_more_documents() {
+    $supplier_id = isset($_POST['supplier_id']) ? intval($_POST['supplier_id']) : 0;
+    $offset      = isset($_POST['offset']) ? intval($_POST['offset']) : 0;
+    $limit       = isset($_POST['limit']) ? intval($_POST['limit']) : 12;
+
+    if ( ! $supplier_id ) wp_send_json_error();
+
+    $all_docs = get_supplier_documents_flattened( $supplier_id );
+    $sliced_docs = array_slice( $all_docs, $offset, $limit );
+    $has_more    = ($offset + $limit) < count($all_docs);
+
+    $html_items = [];
+    if ( ! empty( $sliced_docs ) ) {
+        foreach ( $sliced_docs as $doc ) {
+            ob_start();
+            ?>
+            <div class="list_partner mb-xl-0 cl-blue doc-item-anim mb-3">
+                <a href="<?php echo esc_url($doc['url']); ?>" target="_blank" class="text-reset" title="Tải xuống: <?php echo esc_attr($doc['title']); ?>">
+                    <div class="d-flex mb-3 align-items-center">
+                        <img src="<?php echo esc_url($doc['icon']); ?>" 
+                             style="width: auto; height: 20px; object-fit: contain;" 
+                             alt="Icon">
+                        <p class="mb-0 ms-2 text-truncate"><?php echo esc_html($doc['title']); ?></p>
+                    </div>
+                </a>
+            </div>
+            <?php
+            $html_items[] = ob_get_clean();
+        }
+        
+        wp_send_json_success([
+            'items'    => $html_items,
+            'has_more' => $has_more,
+            'loaded'   => count($sliced_docs)
+        ]);
+    } else {
+        wp_send_json_error();
+    }
+    
+    wp_die();
+}
+
+
+
+/**
+ * Tạo Mục lục 
+ */
+function decox_process_toc_and_content( $content ) {
+    if ( ! is_singular( array('post', 'project') ) ) {
+        return array( 'toc' => '', 'content' => $content );
+    }
+
+    $toc_html = '';
+    $headers = array();
+    $id_counter = 0;
+
+    $pattern = '/<h([2-4])(.*?)>(.*?)<\/h\1>/is';
+
+    $content = preg_replace_callback(
+        $pattern,
+        function( $matches ) use ( &$headers, &$id_counter ) {
+            $level = intval( $matches[1] );
+            $attrs = $matches[2]; 
+            $title_html = $matches[3]; 
+            $title_text = strip_tags( $title_html ); 
+
+            if ( empty( trim( $title_text ) ) ) {
+                return $matches[0]; 
+            }
+
+            if ( preg_match( '/id=["\']([^"\']+)["\']/is', $attrs, $id_match ) ) {
+                $final_slug = $id_match[1];
+            } else {
+                $base_slug = sanitize_title( $title_text );
+                if ( ! $base_slug ) { $base_slug = 'section'; }
+                
+                $final_slug = 'toc-' . $base_slug . '-' . ++$id_counter;
+                
+                $attrs .= ' id="' . $final_slug . '"';
+            }
+
+            $headers[] = array(
+                'level' => $level,
+                'title' => $title_text,
+                'slug'  => $final_slug
+            );
+
+            return '<h' . $level . $attrs . '>' . $title_html . '</h' . $level . '>';
+        },
+        $content
+    );
+
+    if ( ! empty( $headers ) ) {
+        $toc_html .= '<ul class="toc-list">';
+        $current_level = $headers[0]['level']; 
+
+        foreach ( $headers as $index => $header ) {
+            $level = $header['level'];
+
+            if ( $index > 0 ) {
+                if ( $level > $current_level ) {
+                    $toc_html .= "\n<ul class=\"sub-menu mt-3\" style=\"list-style: none; padding-left: 0;\">\n";
+                } elseif ( $level < $current_level ) {
+                    $diff = $current_level - $level;
+                    for ( $i = 0; $i < $diff; $i++ ) {
+                        $toc_html .= "</li>\n</ul>\n";
+                    }
+                    $toc_html .= "</li>\n"; 
+                } else {
+                    // Cùng cấp
+                    $toc_html .= "</li>\n";
+                }
+            }
+
+            $toc_html .= '<li class="toc-item toc-h' . $level . '">';
+            $toc_html .= '<a href="#' . $header['slug'] . '">' . $header['title'] . '</a>';
+
+            $current_level = $level;
+        }
+
+        while ( $current_level > $headers[0]['level'] ) {
+            $toc_html .= "</li>\n</ul>\n";
+            $current_level--;
+        }
+        $toc_html .= "</li>\n</ul>"; 
+    }
+
+    // Wrap HTML
+    if ( ! empty( $toc_html ) ) {
+        $final_toc = '
+        <div id="decox_toc" class="decox-toc-wrapper toc-open toc-closed">
+            <div class="toc-header">
+                <p class="toc-title">Mục lục</p>
+                <span class="toc-toggle" id="toc-toggle-btn">
+                    <svg width="14" height="9" viewBox="0 0 14 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M1 1L7 7L13 1" stroke="#0A0A0A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </span>
+            </div>
+            ' . $toc_html . '
+        </div>';
+    } else {
+        $final_toc = '';
+    }
+
+    return array(
+        'toc'     => $final_toc,
+        'content' => $content
+    );
+}
+
+function load_posts_by_ajax_callback() {
+    check_ajax_referer('ajax-nonce', 'nonce');
+
+    $paged = isset($_POST['page']) ? intval($_POST['page']) : 1;
+    $post_id = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
+
+    $related_ids = get_field('advise', $post_id, false);
+
+    if (empty($related_ids)) {
+        wp_send_json_error('Chưa chọn bài viết nào trong mục Advise.');
+        die();
+    }
+
+    $args = array(
+        'post_type'      => 'post',
+        'post__in'       => $related_ids,
+        'orderby'        => 'post__in',
+        'posts_per_page' => 6,
+        'paged'          => $paged,
+        'post_status'    => 'publish'
+    );
+
+    $query = new WP_Query($args);
+
+    if ($query->have_posts()) :
+        $html_content = '';
+
+        while ($query->have_posts()) : $query->the_post();
+            $thumb_url = get_the_post_thumbnail_url(get_the_ID(), 'large');
+            if(!$thumb_url) $thumb_url = get_template_directory_uri() . '/assets/images/cate1.jpg';
+
+            $categories = get_the_category();
+            $cat_name = !empty($categories) ? $categories[0]->name : 'Giải pháp kiến trúc';
+            $cat_link = !empty($categories) ? get_category_link($categories[0]->term_id) : '#';
+
+            ob_start();
+            ?>
+            <div class="col-lg-4 mb-4">
+                <div class="post_item">
+                    <figure>
+                        <a href="<?php the_permalink(); ?>">
+                            <img src="<?php echo esc_url($thumb_url); ?>" class="img-fluid" alt="<?php the_title(); ?>">
+                        </a>
+                    </figure>
+                    <div class="meta_info">
+                        <div class="row">
+                            <div class="col-auto">
+                                            <div class="post_cate">
+                                                <?php
+                                                $cats = get_the_category();
+                                                if ( ! empty($cats) ) {
+                                                     $cat = $cats[0];
+                                                     if ( $cat->parent ) {
+                                                         $ancestors = get_ancestors($cat->term_id, 'category');
+                                                         $root_id   = end($ancestors);
+                                                         $cat       = get_category($root_id);
+                                                    }
+                                                    echo '<a href="' . esc_url(get_category_link($cat->term_id)) . '">' . esc_html($cat->name) . '</a>';
+                                                }
+                                                ?>
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="time_reading"><?php echo get_decox_reading_time(); ?></div>
+                                        </div>
+                            <div class="col-auto">
+                                <div class="like_post">
+                                    <a href=""><i class="fa fa-heart-o" aria-hidden="true"></i></a>
+                                </div>
+                            </div>
+                        </div>
+                        <h4 class="fs-20 fw-semibold post_title">
+                            <a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
+                        </h4>
+                        <div class="desc fs-14 cl-gray400">
+                            <p><?php echo wp_trim_words(get_the_excerpt(), 20, '...'); ?></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php
+            $html_content .= ob_get_clean();
+        endwhile;
+
+        $pagination = paginate_links(array(
+            'base'      => '%_%',
+            'format'    => '?paged=%#%',
+            'current'   => $paged,
+            'total'     => $query->max_num_pages,
+            'prev_text' => '<img src="'.get_template_directory_uri().'/assets/images/first.svg" class="img-fluid" alt="">',
+            'next_text' => '<img src="'.get_template_directory_uri().'/assets/images/last.svg" class="img-fluid" alt="">',
+            'type'      => 'plain',
+        ));
+
+        wp_send_json_success(array(
+            'html'       => $html_content,
+            'pagination' => '<div class="wp-pagenavi">' . $pagination . '</div>'
+        ));
+
+    else :
+        wp_send_json_error('Hết bài viết.');
+    endif;
+
+    wp_reset_postdata();
+    die();
+}
+
+add_action('wp_ajax_load_posts', 'load_posts_by_ajax_callback');
+add_action('wp_ajax_nopriv_load_posts', 'load_posts_by_ajax_callback');
+
+
+// Tính thời gian đọc
+function get_decox_reading_time( $post_id = null ) {
+    if ( empty( $post_id ) ) {
+        $post_id = get_the_ID();
+    }
+    $content = get_post_field( 'post_content', $post_id );
+    if ( empty( $content ) ) {
+        return '1 phút đọc';
+    }
+
+    $word_count = str_word_count( strip_tags( $content ) );
+    $words_per_minute = 200;
+
+    $minutes = ceil( $word_count / $words_per_minute );
+    if ( $minutes < 1 ) {
+        $minutes = 1;
+    }
+
+    return $minutes . ' phút đọc';
+}
+
+
+add_action('wp_ajax_load_more_videos', 'load_more_videos_ajax_handler');
+add_action('wp_ajax_nopriv_load_more_videos', 'load_more_videos_ajax_handler');
+
+function load_more_videos_ajax_handler() {
+    $supplier_id = isset($_POST['supplier_id']) ? intval($_POST['supplier_id']) : 0;
+    $offset      = isset($_POST['offset']) ? intval($_POST['offset']) : 0;
+    $limit       = 4; // Số lượng load thêm
+
+    // Lấy dữ liệu Repeater
+    $all_videos = get_field('video', $supplier_id);
+
+    if (empty($all_videos) || !is_array($all_videos)) {
+        wp_send_json_error('Không có dữ liệu.');
+    }
+
+    // Cắt mảng
+    $videos_to_show = array_slice($all_videos, $offset, $limit);
+    $total_videos   = count($all_videos);
+    $has_more       = ($offset + $limit) < $total_videos;
+
+    $html_response = [];
+
+    if (!empty($videos_to_show)) {
+        foreach ($videos_to_show as $row) {
+            // --- LOGIC PHP XỬ LÝ DỮ LIỆU ---
+            $item = isset($row['manual_content']) ? $row['manual_content'] : [];
+            if (empty($item)) continue;
+
+            $title  = isset($item['title']) ? $item['title'] : '';
+            $minute = isset($item['minute']) ? $item['minute'] : '';
+            $image  = isset($item['image']) ? $item['image'] : '';
+            
+            // Xử lý Link Video
+            $type = isset($item['manual_type']) ? $item['manual_type'] : '';
+            $video_url = '#';
+
+            if ($type === 'link') {
+                $video_url = isset($item['link_video']) ? $item['link_video'] : '#';
+            } elseif ($type === 'file') {
+                $file_data = isset($item['file_video']) ? $item['file_video'] : '';
+                if (is_array($file_data)) {
+                    $video_url = isset($file_data['url']) ? $file_data['url'] : '#';
+                } else {
+                    $video_url = $file_data;
+                }
+            }
+
+            // Xử lý Ảnh Thumbnail
+            $img_url = '';
+            if (is_array($image)) {
+                $img_url = isset($image['url']) ? $image['url'] : '';
+            } else {
+                $img_url = $image;
+            }
+            // Ảnh mặc định
+            if (empty($img_url)) $img_url = get_template_directory_uri() . '/assets/images/gallery1.jpg'; 
+            
+            // --- BẮT ĐẦU HTML ITEM (ĐÃ CẬP NHẬT CẤU TRÚC MỚI) ---
+            ob_start();
+            ?>
+            <div class="col-lg-3">
+                <div class="item">
+                    <figure class="mb-0 position-relative rounded-3 overflow-hidden">
+                        <a href="<?php echo esc_url($video_url); ?>" 
+                           class="d-block w-100 position-relative ratio-2-3"
+                           data-fancybox="supplier-video" 
+                           data-caption="<?php echo esc_attr($title); ?>">
+                           
+                            <img src="<?php echo esc_url($img_url); ?>"
+                                 class="position-absolute top-0 start-0 w-100 h-100 object-fit-cover img-zoom-hover"
+                                 alt="<?php echo esc_attr($title); ?>">
+
+                            <div class="overlay-gradient-bottom">
+                                <h4 class="fs-24 fw-medium text-white mb-3 pe-auto" style="line-height: 1.4;">
+                                    <span class="text-white text-decoration-none">
+                                        <?php echo esc_html($title); ?>
+                                    </span>
+                                </h4>
+
+                                <div class="d-flex justify-content-between align-items-center pe-auto">
+                                    <ul class="controls list-unstyled d-flex align-items-center gap-2 mb-0">
+                                        <li>
+                                            <span class="btn-play-video">
+                                                <i class="fa fa-play fs-12 ms-1"></i>
+                                            </span>
+                                        </li>
+                                        <?php if ($minute) : ?>
+                                        <li>
+                                            <span class="time-badge"><?php echo esc_html($minute); ?> phút</span>
+                                        </li>
+                                        <?php endif; ?>
+                                    </ul>
+                                    <div class="action">
+                                        <span class="btn-action-circle">
+                                            <img src="<?php echo get_template_directory_uri(); ?>/assets/images/dots.svg" 
+                                                 class="img-fluid" style="height: 14px;" alt="More">
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a> </figure>
+                </div>
+            </div>
+            <?php
+            $html_response[] = ob_get_clean();
+            // --- KẾT THÚC HTML ITEM ---
+        }
+    }
+
+    wp_send_json_success([
+        'items'    => $html_response,
+        'loaded'   => count($videos_to_show),
+        'has_more' => $has_more
+    ]);
 }

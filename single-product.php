@@ -87,15 +87,15 @@ while ( have_posts() ) :
 
                             <div class="col-lg-1 order-lg-0">
                                 <?php 
-    // 1. Kiểm tra số lượng ảnh
-    $count_imgs = $attachment_ids ? count($attachment_ids) : 0;
-    $thumb_class = ($count_imgs <= 5) ? 'is-static-gallery' : ''; 
-    ?>
+                                    // 1. Kiểm tra số lượng ảnh
+                                    $count_imgs = $attachment_ids ? count($attachment_ids) : 0;
+                                    $thumb_class = ($count_imgs <= 5) ? 'is-static-gallery' : ''; 
+                                    ?>
 
                                 <div class="slider_thumb <?php echo $thumb_class; ?>">
                                     <?php if ( $attachment_ids ) : foreach ( $attachment_ids as $attachment_id ) : 
-            $thumb_src = wp_get_attachment_image_url( $attachment_id, 'woocommerce_gallery_thumbnail' );
-        ?>
+                                        $thumb_src = wp_get_attachment_image_url( $attachment_id, 'woocommerce_gallery_thumbnail' );
+                                    ?>
                                     <div class="item">
                                         <figure>
                                             <img src="<?php echo esc_url($thumb_src); ?>" class="img-fluid" alt="">
