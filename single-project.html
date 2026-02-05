@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DECOX</title>
+
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/css/splide.min.css"> <!--Custom css-->
+    <link rel="stylesheet" href="assets/css/slick.css"> <!--Custom css-->
+    <link rel="stylesheet" href="assets/css/slick-theme.css"> <!--Custom css-->
+    <link rel="stylesheet" href="assets/css/font-awesome.min.css">
+    <link rel="stylesheet" href="assets/css/fancybox.css"> <!--Custom css-->
+    <link rel="stylesheet" href="assets/css/main.css?v=3.9"> <!--Custom css-->
+    <script src="/assets/js/vendor/modernizr-2.8.3-respond-1.4.2.min.js"></script>
+</head>
+
+<body>
+    <div id="menu_mobile">
+        <a href="" class="hamburger_btn d-lg-none">
+            <div class="hamburger-icon">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </a>
+        <ul class="menu_site">
+            <li><a href="project.html">Dự án</a></li>
+            <li><a href="">Hình ảnh</a></li>
+            <li class="d-none"><a href="">Sản phẩm & BIM</a></li>
+            <li><a href="expert.html">Chuyên gia</a></li>
+            <li class="menu-item-has-children">
+                <a href="news.html">Tin tức</a>
+                <div class="sub-menu">
+                    <div class="sub-tab">
+                        <div class="head-tab new-tag mb-2">
+                            <img src="assets/images/icon-mega-1.png" alt="">
+                            <h5 class="mb-0 fs-16 fw-500 mb-0">Kiến thức & Chuyên môn</h5>
+                            <div class="new-mega ms-auto fs-12">
+                                Mới
+                            </div>
+                        </div>
+                        <p class="mb-0 text-start">Nâng cao kiến thức của bạn với các hướng dẫn toàn diện của chúng tôi</p>
+                    </div>
+                    <div class="sub-tab">
+                        <div class="head-tab new-tag mb-2">
+                            <img src="assets/images/icon-mega-2.png" alt="">
+                            <h5 class="mb-0 fs-16 fw-500 mb-0">Cộng đồng & Sự kiện</h5>
+                        </div>
+                        <p class="mb-0 text-start">Cập nhật và thông tin mới nhất với blog được cập nhật thường xuyên của chúng tôi</p>
+                    </div>
+                    <div class="sub-tab">
+                        <div class="head-tab new-tag mb-2">
+                            <img src="assets/images/icon-mega-3.png" alt="">
+                            <h5 class="mb-0 fs-16 fw-500 mb-0">Featured</h5>
+                        </div>
+                        <p class="mb-0 text-start">Các tích hợp ứng dụng của chúng tôi giữ cho dữ liệu của bạn đồng bộ trên tất cả các nền tảng</p>
+                    </div>
+                </div>
+            </li>
+            <li><a href="podcast.html">Podcast</a></li>
+        </ul>
+        <!-- <ul class="user_action fs-18">
+            <li><a href="porfolio.html" class="fw-bold">Đăng nhập</a></li>
+            <li><a href="" class="fw-bold">Đăng ký</a></li>
+            <li><a href="" class="fw-semibold">Design & Build Planning</a></li>
+        </ul> -->
+        <div class="btn-action mb-3"> 
+            <a class="btn btn-black" href="">Đăng nhập</a>
+        </div>
+        <div class="btn-action"> 
+            <a class="btn btn-black" href="">Design & Bulld Planning</a>
+        </div>
+    </div>
+    <div class="overlay_menu"></div>
+    <header id="header_site" class="sticky-top">
+        <div class="container">
+            <div class="row justify-content-between align-items-center">
+                <div class="col-auto">
+                    <a href="index.html" class="logo_site">
+                        <img src="assets/images/logo.png" class="img-fluid" alt="">
+                    </a>
+                </div>
+                <div class="col-auto d-block d-lg-none">
+                    <div class="d-flex d-lg-none justify-content-end align-items-center">
+                        <a href="" class="hamburger_btn d-lg-none">
+                            <div class="hamburger-icon">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg d-none d-lg-block">
+                    <ul class="menu_site fs-18">
+                        <li><a href="project.html">Dự án</a></li>
+                        <li><a href="">Hình ảnh</a></li>
+                        <li class="d-none"><a href="">Sản phẩm & BIM</a></li>
+                        <li><a href="expert.html">Chuyên gia</a></li>
+                        <li class="menu-item-has-children">
+                            <a href="news.html">Tin tức</a>
+                            <div class="sub-menu">
+                                <div class="container">
+                                    <div class="row gx-0">
+                                        <div class="col-auto">
+                                            <div style="opacity: 0; visibility: hidden;">
+                                                <a href="index.html" class="logo_site">
+                                                    <img src="assets/images/logo.png" class="img-fluid" alt="">
+                                                </a>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg">
+                                            <div class="row gx-0">
+                                                <div class="col-md-4">
+                                                    <nav>
+                                                        <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                                                            <button class="nav-link active" id="nav-mega-1-tab" data-bs-toggle="tab" data-bs-target="#nav-mega-1" type="button" role="tab" aria-controls="nav-mega-1" aria-selected="true">
+                                                                <div class="head-tab new-tag mb-2">
+                                                                    <img src="assets/images/icon-mega-1.png" alt="">
+                                                                    <h5 class="mb-0 fs-16 fw-500 mb-0">Kiến thức & Chuyên môn</h5>
+                                                                    <div class="new-mega ms-auto fs-12">
+                                                                        Mới
+                                                                    </div>
+                                                                </div>
+                                                                <p class="mb-0 text-start">Nâng cao kiến thức của bạn với các hướng dẫn toàn diện của chúng tôi</p>
+                                                            </button>
+                                                            <button class="nav-link" id="nav-mega-2-tab" data-bs-toggle="tab" data-bs-target="#nav-mega-2" type="button" role="tab" aria-controls="nav-mega-2" aria-selected="false">
+                                                                <div class="head-tab mb-2">
+                                                                    <img src="assets/images/icon-mega-2.png" alt="">
+                                                                    <h5 class="mb-0 fs-16 fw-500 mb-0">Cộng đồng & Sự kiện</h5>
+                                                                </div>
+                                                                <p class="mb-0 text-start">Cập nhật và thông tin mới nhất với blog được cập nhật thường xuyên của chúng tôi</p>
+                                                            </button>
+                                                            <button class="nav-link" id="nav-mega-3-tab" data-bs-toggle="tab" data-bs-target="#nav-mega-3" type="button" role="tab" aria-controls="nav-mega-3" aria-selected="false">
+                                                                <div class="head-tab mb-2">
+                                                                    <img src="assets/images/icon-mega-3.png" alt="">
+                                                                    <h5 class="mb-0 fs-16 fw-500 mb-0">Featured</h5>
+                                                                </div>
+                                                                <p class="mb-0 text-start">Các tích hợp ứng dụng của chúng tôi giữ cho dữ liệu của bạn đồng bộ trên tất cả các nền tảng</p>
+                                                            </button>
+                                                        </div>
+                                                    </nav>
+                                                </div>
+                                                <div class="col-md-8">
+                                                    <div class="wrap_content-mega">
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <span class="fs-12 fw-500" style="color: #007AF1;">Tin nổi bật</span>
+                                                                <div class="tab-content" id="nav-tabContent">
+                                                                    <div class="tab-pane fade show active" id="nav-mega-1" role="tabpanel" aria-labelledby="nav-mega-1-tab">
+                                                                        <ul>
+                                                                            <li><a href="">Xu hướng thiết kế</a></li>
+                                                                            <li><a href="">Thư viện & Công nghệ</a></li>
+                                                                            <li><a href="">Quy chuẩn & Pháp lý</a></li>
+                                                                        </ul>
+                                                                    </div>
+                                                                    <div class="tab-pane fade" id="nav-mega-2" role="tabpanel" aria-labelledby="nav-mega-2-tab">list menu 2</div>
+                                                                    <div class="tab-pane fade" id="nav-mega-3" role="tabpanel" aria-labelledby="nav-mega-3-tab">list menu 3</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <div>
+                                                                    <img src="assets/images/workshop.jpg" class="img-fluid" alt="">
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        <li><a href="podcast.html">Podcast</a></li>
+                    </ul>
+                </div>
+                <div class="col-auto d-none d-lg-block">
+                    <ul class="user_action fs-18">
+                        <li><a href="porfolio.html" class="fw-bold">Đăng nhập</a></li>
+                        <li><a href="" class="fw-bold">Đăng ký</a></li>
+                        <li><a href="" class="fw-semibold">Design & Build Planning</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </header>
+
+
+
+    <div id="jbreadcrumb" class="fs-18">
+        <div class="container">
+            <div class="breadcrumb-container">
+                <span><a href="#">Trang Chủ</a></span>
+                <span class="fa fa-angle-right"></span>
+                <span><a href="#">Dự án</a></span>
+                <span class="fa fa-angle-right"></span>
+                <span><a href="#">Nhà Ở</a></span>
+                <span class="fa fa-angle-right"></span>
+                <span class="breadcrumb_last">Penthouse</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="single_project pt-0">
+        <div class="container">
+            
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h1 class="fs-64 fw-medium mb-4">Penthouse Ecopark</h1>
+                </div>
+            </div>
+
+            <div class="slider_wrapper mb-5">
+                <div class="project_slider">
+                    <div class="item">
+                        <figure class="mb-0 position-relative rounded-3 overflow-hidden" style="padding-bottom: 55%;">
+                            <img src="assets/images/project-banner-1.jpg" alt="Living Room Top" class="position-absolute w-100 h-100 object-fit-cover top-0 start-0">
+                        </figure>
+                    </div>
+                    <div class="item">
+                        <figure class="mb-0 position-relative rounded-3 overflow-hidden" style="padding-bottom: 55%;">
+                            <img src="assets/images/project-banner-2.jpg" alt="Living Room Top 2" class="position-absolute w-100 h-100 object-fit-cover top-0 start-0">
+                        </figure>
+                    </div>
+                </div>
+                <div class="project__arrows">
+                    <div class="prev_arrow"><img src="assets/images/dropdown.svg" class="img-fluid" alt="Prev"></div>
+                    <div class="next_arrow"><img src="assets/images/dropdown.svg" class="img-fluid" alt="Next"></div>
+                </div>
+            </div>
+
+            <div class="project_info mb-5 pb-5 border-bottom border-light">
+                <div class="row">
+                    <div class="col-lg-6">
+                        <table class="table table-borderless fs-18 jtable">
+                            <tbody>
+                                <tr>
+                                    <td width="30%">DỰ ÁN:</td>
+                                    <td class="fw-medium">Penthouse Ecopark.</td>
+                                </tr>
+                                <tr>
+                                    <td>ĐỊA ĐIỂM:</td>
+                                    <td class="cl-blue"><a href="#">Hà Nội, Việt Nam.</a></td>
+                                </tr>
+                                <tr>
+                                    <td>KIẾN TRÚC SƯ CHỦ TRÌ:</td>
+                                    <td class="fw-medium">MA Housing.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-lg-6">
+                        <table class="table table-borderless fs-18 jtable">
+                            <tbody>
+                                <tr>
+                                    <td width="30%">CÔNG TY:</td>
+                                    <td class="cl-blue"><a href="#">Le house.</a></td>
+                                </tr>
+                                <tr>
+                                    <td>NHÓM THIẾT KẾ:</td>
+                                    <td class="fw-medium">Le House.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="project-section-row">
+                <div class="row">
+                    <div class="col-lg-3">
+                        <h3 class="section-label">Phòng khách</h3>
+                    </div>
+                    <div class="col-lg-9">
+                        <div class="gallery-grid-custom">
+                            <div class="item">
+                                <figure class="mb-0 position-relative rounded-3 overflow-hidden" style="padding-bottom: 65%;">
+                                    <img src="assets/images/living-room-1.jpg" class="position-absolute w-100 h-100 object-fit-cover top-0 start-0" alt="Living Room">
+                                </figure>
+                            </div>
+                             <div class="item">
+                                <figure class="mb-0 position-relative rounded-3 overflow-hidden" style="padding-bottom: 65%;">
+                                    <img src="assets/images/living-room-2.jpg" class="position-absolute w-100 h-100 object-fit-cover top-0 start-0" alt="Living Room">
+                                </figure>
+                            </div>
+                             <div class="item-large">
+                                <figure class="mb-0 position-relative rounded-3 overflow-hidden" style="padding-bottom: 50%;">
+                                    <img src="assets/images/living-room-main.jpg" class="position-absolute w-100 h-100 object-fit-cover top-0 start-0" alt="Living Room Main">
+                                    <div class="position-absolute bottom-0 start-0 p-3 text-white w-100" style="background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);">
+                                        <div class="d-flex justify-content-between align-items-end">
+                                            <span class="fw-bold">Workshop Đồng Phủ - Ưu Đàm</span>
+                                            <img src="assets/images/play-btn.svg" width="30" alt="Play">
+                                        </div>
+                                    </div>
+                                </figure>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="project-section-row">
+                <div class="row">
+                    <div class="col-lg-3">
+                        <h3 class="section-label">Phòng ngủ</h3>
+                    </div>
+                    <div class="col-lg-9">
+                        <div class="gallery-grid-custom">
+                            <div class="item">
+                                <figure class="mb-0 position-relative rounded-3 overflow-hidden" style="padding-bottom: 65%;">
+                                    <img src="assets/images/bedroom-1.jpg" class="position-absolute w-100 h-100 object-fit-cover top-0 start-0" alt="Bedroom">
+                                </figure>
+                            </div>
+                             <div class="item">
+                                <figure class="mb-0 position-relative rounded-3 overflow-hidden" style="padding-bottom: 65%;">
+                                    <img src="assets/images/bedroom-2.jpg" class="position-absolute w-100 h-100 object-fit-cover top-0 start-0" alt="Bedroom">
+                                </figure>
+                            </div>
+                             <div class="item-large">
+                                <figure class="mb-0 position-relative rounded-3 overflow-hidden" style="padding-bottom: 50%;">
+                                    <img src="assets/images/bedroom-main.jpg" class="position-absolute w-100 h-100 object-fit-cover top-0 start-0" alt="Bedroom Main">
+                                </figure>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+             <div class="project-section-row">
+                <div class="row">
+                    <div class="col-lg-3">
+                        <h3 class="section-label">Phòng bếp</h3>
+                    </div>
+                    <div class="col-lg-9">
+                        <div class="gallery-grid-custom">
+                             <div class="item-large">
+                                <figure class="mb-0 position-relative rounded-3 overflow-hidden" style="padding-bottom: 50%;">
+                                    <img src="assets/images/kitchen-main.jpg" class="position-absolute w-100 h-100 object-fit-cover top-0 start-0" alt="Kitchen Main">
+                                </figure>
+                            </div>
+                            <div class="item">
+                                <figure class="mb-0 position-relative rounded-3 overflow-hidden" style="padding-bottom: 65%;">
+                                    <img src="assets/images/kitchen-1.jpg" class="position-absolute w-100 h-100 object-fit-cover top-0 start-0" alt="Kitchen">
+                                </figure>
+                            </div>
+                             <div class="item">
+                                <figure class="mb-0 position-relative rounded-3 overflow-hidden" style="padding-bottom: 65%;">
+                                    <img src="assets/images/kitchen-2.jpg" class="position-absolute w-100 h-100 object-fit-cover top-0 start-0" alt="Kitchen">
+                                </figure>
+                            </div>
+                        </div>
+                        <div class="text-center mt-4">
+                            <a href="#" class="btn btn-black rounded-pill fs-16 px-4">Xem thêm</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-5">
+                <h2 class="fs-36 fw-bold mb-5">Đối tác đồng hành</h2>
+                
+                <div class="project-section-row">
+                    <div class="row">
+                        <div class="col-lg-3">
+                            <h3 class="section-label">EuroStone</h3>
+                        </div>
+                        <div class="col-lg-9">
+                            <div class="partner-img-grid">
+                                <img src="assets/images/partner-1.jpg" alt="Eurostone project">
+                                <img src="assets/images/partner-2.jpg" alt="Eurostone project">
+                                <img src="assets/images/partner-3.jpg" alt="Eurostone project">
+                                <img src="assets/images/partner-4.jpg" alt="Eurostone project">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="project-section-row">
+                    <div class="row">
+                        <div class="col-lg-3">
+                            <h3 class="section-label">Nhôm kính YKK</h3>
+                        </div>
+                        <div class="col-lg-9">
+                            <div class="partner-img-grid">
+                                <img src="assets/images/ykk-1.jpg" alt="YKK project">
+                                <img src="assets/images/ykk-2.jpg" alt="YKK project">
+                                <img src="assets/images/ykk-3.jpg" alt="YKK project">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                 <div class="project-section-row">
+                    <div class="row">
+                        <div class="col-lg-3">
+                            <h3 class="section-label">Mama Mia</h3>
+                        </div>
+                        <div class="col-lg-9">
+                            <div class="partner-img-grid">
+                                <img src="assets/images/mama-1.jpg" alt="Mama Mia">
+                                <img src="assets/images/mama-2.jpg" alt="Mama Mia">
+                                <img src="assets/images/mama-3.jpg" alt="Mama Mia">
+                                <img src="assets/images/mama-4.jpg" alt="Mama Mia">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <a href="#" class="btn btn-black rounded-pill fs-16 px-4">Xem thêm</a>
+                </div>
+            </div>
+
+            <div class="project-content mb-5 border-bottom-0">
+                <h2 class="fs-36 fw-bold mb-4">Giới thiệu dự án</h2>
+                <h4 class="fw-bold mb-3 fs-24">Tổng quan dự án Crystal Galleria</h4>
+                <p class="fs-18 cl-gray600">
+                    Crystal Galleria được hình thành từ mong muốn về một không gian sống đơn giản, nhẹ nhàng và thực sự thoải mái. Gia chủ ưu tiên sự gắn kết gia đình, đặc biệt là những phút giây quây quần mỗi ngày. 90% sinh hoạt diễn ra quanh đảo bếp và bàn ăn, vì vậy bố cục mặt bằng được thiết kế xoay quanh khu vực này để tối ưu trải nghiệm và tạo dòng chảy sinh hoạt tự nhiên.
+                </p>
+                <figure class="mt-4 mb-4">
+                    <img src="assets/images/project-overview-large.jpg" class="w-100 rounded-3" alt="Overview">
+                </figure>
+                <div class="text-center mt-4">
+                    <a href="#" class="btn btn-black rounded-pill fs-16 px-4">Xem thêm</a>
+                </div>
+            </div>
+
+        </div> </div> <div class="related_projects_wrapper section-padding pb-5">
+        <div class="container">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h3 class="fs-32 fw-medium mb-0">Các dự án khác của Le house</h3>
+                </div>
+            </div>
+            <div class="row gy-4">
+                <div class="col-lg-4 col-md-6 col-12">
+                    <div class="item_post">
+                        <figure class="mb-0 position-relative" style="padding-bottom: 60%; overflow: hidden; border-radius: 4px;">
+                            <a href="#" class="d-block w-100 h-100 position-absolute top-0 start-0">
+                                <img src="assets/images/rel-1.jpg" alt="Cuon n' Roll" class="img-fluid w-100 h-100 object-fit-cover">
+                            </a>
+                            <div class="meta-wrapper position-absolute bottom-0 start-0 w-100 p-3" style="background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);">
+                                <h4 class="fs-18 fw-medium text-white mb-0">Cuon n' Roll Restaurant</h4>
+                            </div>
+                        </figure>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-12">
+                    <div class="item_post">
+                        <figure class="mb-0 position-relative" style="padding-bottom: 60%; overflow: hidden; border-radius: 4px;">
+                            <a href="#" class="d-block w-100 h-100 position-absolute top-0 start-0">
+                                <img src="assets/images/rel-2.jpg" alt="Penthouse Ecopark" class="img-fluid w-100 h-100 object-fit-cover">
+                            </a>
+                             <div class="meta-wrapper position-absolute bottom-0 start-0 w-100 p-3" style="background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);">
+                                <h4 class="fs-18 fw-medium text-white mb-0">Căn hộ Penthouse Ecopark</h4>
+                            </div>
+                        </figure>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 col-12">
+                    <div class="item_post">
+                        <figure class="mb-0 position-relative" style="padding-bottom: 60%; overflow: hidden; border-radius: 4px;">
+                            <a href="#" class="d-block w-100 h-100 position-absolute top-0 start-0">
+                                <img src="assets/images/rel-3.jpg" alt="Nap Am Homestay" class="img-fluid w-100 h-100 object-fit-cover">
+                            </a>
+                             <div class="meta-wrapper position-absolute bottom-0 start-0 w-100 p-3" style="background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);">
+                                <h4 class="fs-18 fw-medium text-white mb-0">Nap Am Homestay</h4>
+                            </div>
+                        </figure>
+                    </div>
+                </div>
+            </div>
+             <div class="text-center mt-5">
+                <a href="#" class="btn btn-black rounded-pill fs-16 px-4">Xem thêm</a>
+            </div>
+        </div>
+    </div>
+
+
+        <footer id="footer_site">
+        <div class="foot_content">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-5">
+                        <a href="" class="logo_ft">
+                            <img src="assets/images/logo.png" class="img-fluid" alt="">
+                        </a>
+                        <div class="slogan fs-16">
+                            The home of design & build solutions
+                        </div>
+                    </div>
+                    <div class="col-lg-7">
+                        <div class="row">
+                            <div class="col-lg-4 col-6">
+                                <h4 class="fs-16 fw-medium">Hỗ trợ</h4>
+                                <ul class="fs-18">
+                                    <li><a href="">Liên hệ</a></li>
+                                    <li><a href="">Cộng đồng</a></li>
+                                    <li><a href="">Trò chuyện trực tiếp</a></li>
+                                    <li><a href="">Hướng dẫn</a></li>
+                                    <li><a href="">Phản hồi</a></li>
+                                </ul>
+                            </div>
+                            <div class="col-lg-4 col-6">
+                                <h4 class="fs-16 fw-medium">Công ty</h4>
+                                <ul class="fs-18">
+                                    <li><a href="">Giới thiệu</a></li>
+                                    <li><a href="">Sự nghiệp</a></li>
+                                    <li><a href="">Đối tác</a></li>
+                                    <li><a href="">Blog</a></li>
+                                    <li><a href="">Báo chí</a></li>
+                                </ul>
+                            </div>
+                            <div class="col-lg-4 col-6">
+                                <h4 class="fs-16 fw-medium">Pháp lý</h4>
+                                <ul class="fs-18">
+                                    <li><a href="">Quyền riêng tư</a></li>
+                                    <li><a href="">Điều khoản</a></li>
+                                    <li><a href="">Tuyên bố từ chối trách nhiệm</a></li>
+                                    <li><a href="">Khả năng truy cập</a></li>
+                                    <li><a href="">Cookie</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="foot_end">
+            <div class="container">
+                <div class="row justify-content-between">
+                    <div class="col-auto">
+                        <div class="copyright fs-16">
+                            © 2025 DECOX. All rights reserved.
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <ul class="social">
+                            <li><a href=""><img src="assets/images/facebook.svg" alt=""></a></li>
+                            <li><a href=""><img src="assets/images/linkedin.svg" alt=""></a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script type="text/javascript" src="/assets/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="assets/js/imagesloaded.pkgd.min.js"></script> <!--Custom js-->
+    <script type="text/javascript" src="/assets/js/splide.min.js"></script> <!--Custom js-->
+    <script type="text/javascript" src="/assets/js/splide-extension-auto-scroll.min.js"></script> <!--Custom js-->
+    <script type="text/javascript" src="/assets/js/slick.min.js"></script> <!--Custom js-->
+    <script type="text/javascript" src="/assets/js/fancybox.umd.js"></script> <!--Custom js-->
+    <script type="text/javascript" src="/assets/js/main.js?v=1.5"></script> <!--Custom js-->
+</body>
+
+</html>
