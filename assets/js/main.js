@@ -519,57 +519,65 @@ jQuery(document).ready(function ($) {
 jQuery(document).ready(function($) {
 
     function checkContentHeight() {
-        $('.project-content').each(function() {
-            var $wrapper = $(this).find('.project_desc_wrapper');
-            var $content = $(this).find('.project_editor_content');
-            var $overlay = $(this).find('.desc_overlay');
-            var $btnDiv  = $(this).find('.btn_view_more').parent(); 
-  
-            var collapsedHeight = 600; 
-            if ($(window).width() < 992) {
-                collapsedHeight = 300;
-            }
+        // Chiều cao giới hạn cho 10 dòng (khớp với CSS max-height)
+        var limitHeight = 260; 
 
-            if ($content.outerHeight() <= collapsedHeight) {
-                $wrapper.removeClass('collapsed'); 
-                $overlay.addClass('hidden');       
-                $btnDiv.hide();               
+        $('.js-check-height').each(function() {
+            var $container = $(this);
+            var $wrapper = $container.find('.project_desc_wrapper');
+            
+            // Lấy chiều cao thực tế của nội dung (scrollHeight)
+            var scrollHeight = $wrapper.get(0).scrollHeight;
+
+            if (scrollHeight <= limitHeight) {
+                // TRƯỜNG HỢP: Nội dung ngắn (< 10 dòng)
+                // 1. Thêm class để ẩn overlay và nút
+                $container.addClass('content-short');
+                // 2. Xóa class collapsed để hiện full nội dung luôn (đề phòng CSS cắt mất)
+                $wrapper.removeClass('collapsed');
             } else {
-                $btnDiv.show();              
+                // TRƯỜNG HỢP: Nội dung dài (> 10 dòng)
+                $container.removeClass('content-short');
+                $wrapper.addClass('collapsed');
             }
         });
     }
 
+    // Chạy hàm khi trang tải xong
     checkContentHeight();
 
+    // Chạy lại khi resize màn hình (để tính toán lại nếu dòng bị nhảy)
+    $(window).on('resize', function() {
+        // Chỉ chạy lại nếu người dùng chưa bấm mở rộng
+        if (!$('.project_desc_wrapper').hasClass('expanded')) {
+            checkContentHeight();
+        }
+    });
+
+    // Xử lý sự kiện click nút Xem thêm / Thu gọn
     $('.btn_view_more').on('click', function(e) {
         e.preventDefault();
 
-        var $container = $(this).closest('.project-content');
+        var $container = $(this).closest('.js-check-height');
         var $wrapper   = $container.find('.project_desc_wrapper');
         var $overlay   = $container.find('.desc_overlay');
         var $btn       = $(this);
 
         if ($wrapper.hasClass('collapsed')) {
-            // MỞ RỘNG
+            // Hành động: MỞ RỘNG
             $wrapper.removeClass('collapsed').addClass('expanded');
-            $overlay.addClass('hidden'); 
+            $overlay.addClass('hidden'); // Ẩn blur
             $btn.text('Thu gọn');
         } else {
-            // THU GỌN
+            // Hành động: THU GỌN
             $wrapper.removeClass('expanded').addClass('collapsed');
-            $overlay.removeClass('hidden');
+            $overlay.removeClass('hidden'); // Hiện blur lại
             $btn.text('Xem thêm');
             
+            // Cuộn nhẹ lên đầu đoạn văn bản để trải nghiệm tốt hơn
             $('html, body').animate({
-                scrollTop: $container.offset().top - 100 
+                scrollTop: $container.offset().top - 120 
             }, 500);
-        }
-    });
-
-    $(window).on('resize', function() {
-        if (!$('.project_desc_wrapper').hasClass('expanded')) {
-             checkContentHeight();
         }
     });
 
@@ -722,3 +730,4 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 });
+

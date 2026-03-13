@@ -292,46 +292,142 @@ jQuery(document).ready(function($) {
 });
 
 jQuery(document).ready(function($) {
-    // Cấu hình chiều cao Header (nếu có sticky header thì tăng số này lên, ví dụ 80 hoặc 100)
-    var headerOffset = 100; 
-
-    // 1. Xử lý sự kiện CLICK vào menu
     $('.scroll-menu a[href^="#"]').on('click', function(e) {
-        e.preventDefault();
-        
-        var targetId = $(this).attr('href');
-        var $target = $(targetId);
+        e.preventDefault(); 
 
-        if ($target.length) {
-            // Xóa active cũ, thêm active mới ngay lập tức
+        var targetId = this.getAttribute('href');
+        var target = $(targetId);
+
+        if (target.length) {
             $('.scroll-menu li').removeClass('current-menu-item');
             $(this).parent('li').addClass('current-menu-item');
+            var headerHeight = $('#header_site').outerHeight() || 0;
+            var menuHeight = $('.supplier_menu').outerHeight() || 0;
+            var offsetTop = headerHeight + menuHeight + 20; 
 
-            // Cuộn mượt
-            $('html, body').animate({
-                scrollTop: $target.offset().top - headerOffset
-            }, 800); // 800ms tốc độ cuộn
+            $('html, body').stop().animate({
+                scrollTop: target.offset().top - offsetTop
+            }, 200, 'swing'); 
         }
     });
 
-    // 2. Xử lý SCROLL SPY (Tự động Active khi cuộn)
     $(window).on('scroll', function() {
-        var scrollPos = $(window).scrollTop();
-        
+        var scrollPos = $(document).scrollTop();
+        var headerHeight = $('#header_site').outerHeight() || 0;
+        var menuHeight = $('.supplier_menu').outerHeight() || 0;
+        var offsetTop = headerHeight + menuHeight + 50;
+
         $('.scroll-menu a[href^="#"]').each(function() {
             var currLink = $(this);
             var refElement = $(currLink.attr("href"));
             
-            // Kiểm tra nếu section tồn tại trong DOM
             if (refElement.length) {
-                // Logic: Vị trí scroll nằm trong khoảng bắt đầu và kết thúc của section
-                if (refElement.offset().top - headerOffset - 10 <= scrollPos && 
-                    refElement.offset().top + refElement.outerHeight() > scrollPos) {
-                    
+                if (refElement.position().top <= scrollPos + offsetTop && refElement.position().top + refElement.height() > scrollPos + offsetTop) {
                     $('.scroll-menu li').removeClass("current-menu-item");
                     currLink.parent('li').addClass("current-menu-item");
                 }
             }
         });
     });
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+    // 1. MEGA MENU HOVER
+    const megaTabs = document.querySelectorAll('#header_site .menu_site .sub-menu .nav-tabs .nav-link');
+    const targetImage = document.getElementById('mega_menu_image_target');
+    const mainWrapper = document.getElementById('mega-main-wrapper');
+    const colContent = document.getElementById('mega-col-content');
+    const colImage = document.getElementById('mega-col-image');
+
+    const switchTabManual = (hoveredTab) => {
+        megaTabs.forEach(tab => tab.classList.remove('active'));
+        hoveredTab.classList.add('active');
+        const targetContentId = hoveredTab.getAttribute('data-target-content');
+        if (targetContentId) {
+            const allPanes = document.querySelectorAll('#header_site .menu_site .sub-menu .tab-content .tab-pane');
+            const activePane = document.querySelector(targetContentId);
+            if (activePane) {
+                allPanes.forEach(pane => pane.classList.remove('show', 'active'));
+                activePane.classList.add('show', 'active');
+            }
+        }
+    };
+
+    if (megaTabs.length > 0 && targetImage) {
+        let fadeTimeout;
+        megaTabs.forEach(tab => {
+            const handleMegaChange = (triggerElement) => {
+                const hasContent = triggerElement.getAttribute('data-has-content') === 'true';
+                const hasImage = triggerElement.getAttribute('data-has-image') === 'true';
+                const newImageSrc = triggerElement.getAttribute('data-image');
+
+                if (hasImage && newImageSrc) {
+                    targetImage.parentElement.style.display = 'block'; 
+                    targetImage.style.display = 'block';
+
+                    if (!targetImage.src.includes(newImageSrc)) {
+                        const tempImg = new Image();
+                        tempImg.src = newImageSrc;
+                        tempImg.onload = function () {
+                            targetImage.classList.add('img-fading');
+                            clearTimeout(fadeTimeout);
+                            fadeTimeout = setTimeout(() => {
+                                targetImage.src = newImageSrc;
+                                targetImage.classList.remove('img-fading');
+                            }, 300);
+                        };
+                    }
+                } else {
+                    targetImage.style.display = 'none';
+                }
+
+                if (mainWrapper) mainWrapper.className = '';
+                if (colContent) colContent.className = '';
+                if (colImage) colImage.className = '';
+
+                if (hasContent && hasImage) {
+                    mainWrapper.classList.add('col-md-8');
+                    colContent.classList.add('col-md-6');
+                    colImage.classList.add('col-md-6');
+                    colContent.classList.remove('d-none');
+                    colImage.classList.remove('d-none');
+                } else if (hasContent && !hasImage) {
+                    mainWrapper.classList.add('col-md-4');
+                    colContent.classList.add('col-md-12');
+                    colImage.classList.add('d-none');
+                    colContent.classList.remove('d-none');
+                } else if (!hasContent && hasImage) {
+                    mainWrapper.classList.add('col-md-4');
+                    colContent.classList.add('d-none');
+                    colImage.classList.add('col-md-12');
+                    colImage.classList.remove('d-none');
+                } else {
+                    mainWrapper.classList.add('d-none');
+                }
+            };
+
+            tab.addEventListener('mouseenter', function () {
+                switchTabManual(this);
+                handleMegaChange(this);
+            });
+        });
+    }
+
+    // 2. USER DROPDOWN (Click Avatar)
+    const avatarTrigger = document.getElementById('avatarTrigger');
+    const userDropdown = document.getElementById('userDropdown');
+
+    if (avatarTrigger && userDropdown) {
+        avatarTrigger.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            userDropdown.classList.toggle('show');
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!avatarTrigger.contains(e.target) && !userDropdown.contains(e.target)) {
+                userDropdown.classList.remove('show');
+            }
+        });
+    }
 });

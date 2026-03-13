@@ -8,8 +8,9 @@ get_header();
 
 if (have_posts()) :
     while (have_posts()) : the_post();
-        
-    if($_GET['debug'] == 1): ?>
+    $ver = get_field('version');
+    
+    if($ver['ver'] == 'ver_2'): ?>
 
 
 <div class="supplier_page">
@@ -30,13 +31,15 @@ if (have_posts()) :
                     <div class="brand_intro">
                         <div class="row">
                             <div class="col-md-2 col-3">
-                                <?php if ( has_post_thumbnail() ): ?>
-                                <img src="<?php echo get_the_post_thumbnail_url( get_the_ID(), 'full' ); ?>"
-                                    class="img-fluid" alt="<?php the_title(); ?>">
-                                <?php else: ?>
-                                <img src="<?php echo get_template_directory_uri(); ?>/assets/images/logo-dezon-black.jpeg"
-                                    class="img-fluid" alt="Default Logo">
-                                <?php endif; ?>
+                                <div class="logo-square-box">
+                                    <?php if ( has_post_thumbnail() ): ?>
+                                    <img src="<?php echo get_the_post_thumbnail_url( get_the_ID(), 'full' ); ?>"
+                                        class="img-fluid" alt="<?php the_title(); ?>">
+                                    <?php else: ?>
+                                    <img src="<?php echo get_template_directory_uri(); ?>/assets/images/logo-dezon-black.jpeg"
+                                        class="img-fluid" alt="Default Logo">
+                                    <?php endif; ?>
+                                </div>
                             </div>
 
                             <div class="col-md-10 col-9">
@@ -50,7 +53,7 @@ if (have_posts()) :
                                         <?php endif; ?>
                                     </div>
 
-                                    <p class="my-2 fs-20 fw-500" style="color: #80828D;">
+                                    <p class="my-2 fs-14 fw-500" style="color: #80828D;">
                                         <?php 
                                             if ( has_excerpt() ) {
                                                 echo get_the_excerpt(); 
@@ -64,24 +67,22 @@ if (have_posts()) :
                                         $terms = get_the_terms( get_the_ID(), 'supplier_expertise' ); 
                                         if ( ! empty( $terms ) && ! is_wp_error( $terms ) ) : 
                                         ?>
-                                    <ul>
+                                    <ul class="fs-12">
                                         <?php foreach ( $terms as $term ) : ?>
                                         <li>
-                                            <a href="<?php echo esc_url( get_term_link( $term ) ); ?>">
-                                                <?php echo esc_html( $term->name ); ?>
-                                            </a>
+                                            <p><?php echo esc_html( $term->name ); ?></p>
                                         </li>
                                         <?php endforeach; ?>
                                     </ul>
                                     <?php endif; ?>
 
-                                    <div class="mt-2 d-flex">
+                                    <div class="mt-2 d-flex align-items-center">
                                         <?php if( $facebook_url ): ?>
                                         <div class="me-3">
                                             <a href="<?php echo esc_url($facebook_url); ?>" target="_blank"
                                                 rel="nofollow">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                                    viewBox="0 0 24 24" fill="none">
+                                                    viewBox="0 0 24 24" fill="none" style="width: 20px; height: 20px;">
                                                     <g clip-path="url(#clip0_360_36694)">
                                                         <path
                                                             d="M24 12C24 5.37258 18.6274 0 12 0C5.37258 0 0 5.37258 0 12C0 17.9895 4.3882 22.954 10.125 23.8542V15.4688H7.07812V12H10.125V9.35625C10.125 6.34875 11.9166 4.6875 14.6576 4.6875C15.9701 4.6875 17.3438 4.92188 17.3438 4.92188V7.875H15.8306C14.34 7.875 13.875 8.80008 13.875 9.75V12H17.2031L16.6711 15.4688H13.875V23.8542C19.6118 22.954 24 17.9895 24 12Z"
@@ -102,7 +103,7 @@ if (have_posts()) :
                                             <a href="<?php echo esc_url($website_url); ?>" target="_blank"
                                                 rel="nofollow">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"
-                                                    viewBox="0 0 22 22" fill="none">
+                                                    viewBox="0 0 22 22" fill="none" style="width: 20px; height: 20px;">
                                                     <path
                                                         d="M5.74805 11.7578C5.84265 14.2425 6.28402 16.5096 6.97656 18.2461C7.36805 19.2276 7.86012 20.0898 8.45703 20.7227C8.74969 21.033 9.08399 21.3047 9.45703 21.501C4.43215 20.8996 0.467159 16.8367 0 11.7578H5.74805ZM21.5 11.7578C21.0328 16.8367 17.0679 20.8996 12.043 21.501C12.416 21.3047 12.7503 21.033 13.043 20.7227C13.6399 20.0898 14.1319 19.2276 14.5234 18.2461C15.216 16.5095 15.6582 14.2425 15.7529 11.7578H21.5ZM13.7422 11.7578C13.6484 14.0304 13.242 16.0343 12.6582 17.498C12.3227 18.339 11.9483 18.9526 11.584 19.3389C11.2217 19.723 10.9395 19.8154 10.75 19.8154C10.5605 19.8154 10.2783 19.723 9.91602 19.3389C9.55172 18.9526 9.1773 18.339 8.8418 17.498C8.25801 16.0343 7.85157 14.0304 7.75781 11.7578H13.7422ZM10.75 1.6875C10.9395 1.6875 11.2217 1.77987 11.584 2.16406C11.9482 2.55034 12.3228 3.16306 12.6582 4.00391C13.2421 5.4677 13.6484 7.47243 13.7422 9.74512H7.75781C7.85157 7.47243 8.25795 5.4677 8.8418 4.00391C9.17723 3.16307 9.55179 2.55034 9.91602 2.16406C10.2783 1.77989 10.5605 1.68751 10.75 1.6875ZM9.45703 0C9.08395 0.196288 8.74971 0.467955 8.45703 0.77832C7.86017 1.41125 7.36804 2.27249 6.97656 3.25391C6.28392 4.99045 5.84266 7.25831 5.74805 9.74316H0C0.467158 4.66431 4.43216 0.601428 9.45703 0ZM12.043 0C17.0679 0.6014 21.0328 4.66428 21.5 9.74316H15.7529C15.6582 7.25831 15.2161 4.99045 14.5234 3.25391C14.132 2.2725 13.6398 1.41125 13.043 0.77832C12.7503 0.467946 12.4161 0.196287 12.043 0Z"
                                                         fill="#80828D" />
@@ -130,19 +131,21 @@ if (have_posts()) :
                         wp_reset_postdata();
                     ?>
 
-                    <div class="my-3">
-                        <div>
-                            <p class="cl-gray-2 mb-1">
-                                Dự án hoàn tất: 
-                                <span class="cl-black fw-bold"><?php echo number_format_i18n($total_projects); ?></span> 
-                                (<?php echo number_format_i18n($total_partners); ?> đối tác tham gia)
-                            </p>
-                            <p class="cl-gray-2 mb-0">
-                                Sản phẩm: 
-                                <span class="cl-black fw-bold"><?php echo number_format_i18n($total_products); ?></span>
-                            </p>
+                        <div class="my-3">
+                            <div>
+                                <p class="cl-gray-2 mb-1">
+                                    Dự án hoàn tất:
+                                    <span
+                                        class="cl-black fw-bold"><?php echo number_format_i18n($total_projects); ?></span>
+                                    (<?php echo number_format_i18n($total_partners); ?> đối tác tham gia)
+                                </p>
+                                <p class="cl-gray-2 mb-0">
+                                    Sản phẩm:
+                                    <span
+                                        class="cl-black fw-bold"><?php echo number_format_i18n($total_products); ?></span>
+                                </p>
+                            </div>
                         </div>
-                    </div>
                         <div class="d-flex align-items-center">
                             <div class="me-2">
                                 <a href=""><img
@@ -193,20 +196,21 @@ if (have_posts()) :
     </div>
 
     <div class="supplier_menu">
-    <div class="container">
-        <ul class="scroll-menu"> 
-            <li class="current-menu-item"><a href="#gioi-thieu">Giới thiệu</a></li>
-            <li><a href="#du-an">Dự án</a></li>
-            <li><a href="#san-pham">Sản phẩm</a></li>
-            <li><a href="#doi-tac">Đối tác</a></li>
-            <li><a href="#hinh-anh">Hình ảnh</a></li>
-            <li><a href="#video">Video</a></li>
-            <li><a href="#tu-van">Tư vấn</a></li>
-            <li><a href="#catalogue">Catalogue</a></li>
-            <li><a href="#showroom">Showroom</a></li>
-        </ul>
+        <div class="container">
+            <ul class="scroll-menu">
+                <li class="current-menu-item"><a href="#gioi-thieu">Giới thiệu</a></li>
+                <li><a href="#du-an">Dự án</a></li>
+                <li><a href="#san-pham">Sản phẩm</a></li>
+                <li><a href="#thuong-hieu">Thương hiệu</a></li>
+                <li><a href="#doi-tac">Đối tác</a></li>
+                <li><a href="#hinh-anh">Hình ảnh</a></li>
+                <li><a href="#video">Video</a></li>
+                <li><a href="#tu-van">Tư vấn</a></li>
+                <li><a href="#catalogue">Catalogue</a></li>
+                <li><a href="#showroom">Showroom</a></li>
+            </ul>
+        </div>
     </div>
-</div>
 </div>
 
 
@@ -221,7 +225,7 @@ if (have_posts()) :
             </div>
 
             <div class="col-lg-9">
-                <div class="project-content mb-5 border-bottom-0 pb-0 position-relative">
+                <div class="project-content mb-5 border-bottom-0 pb-0 position-relative js-check-height">
 
                     <div class="project_desc_wrapper collapsed">
                         <?php the_content(); ?>
@@ -229,7 +233,7 @@ if (have_posts()) :
 
                     <div class="desc_overlay"></div>
 
-                    <div class="text-center mt-4 position-relative" style="z-index: 5;">
+                    <div class="text-center mt-4 position-relative btn-view-more-container" style="z-index: 5;">
                         <a href="#" class="btn btn-black rounded-pill fs-14 px-4 btn_view_more btn-intro-view">
                             Xem thêm
                         </a>
@@ -242,14 +246,9 @@ if (have_posts()) :
 
 
 <?php
-    // PHP Logic ban đầu
     $remote_fetcher = new Dezon_Remote_Project_Fetcher();
     $current_supplier_id = get_the_ID(); 
-
-    // Lấy 6 dự án đầu tiên (Offset 0)
     $related_projects = $remote_fetcher->get_projects_by_supplier( $current_supplier_id, 6, 0 );
-
-    // Chỉ hiển thị section nếu có dự án
     if ( ! empty( $related_projects ) ) : 
     ?>
 
@@ -333,8 +332,6 @@ jQuery(document).ready(function($) {
 
 
 <?php
-
-
     $supplier_id = get_the_ID();
     $all_products_args = get_supplier_product_args( $supplier_id, 0, 1, -1 );
     $all_products_args['fields'] = 'ids'; 
@@ -394,25 +391,55 @@ jQuery(document).ready(function($) {
                 <div class="sticky-top sticky-intro-label">
                     <span class="fs-18 fw-bold">Sản phẩm</span>
 
-                    <div class="product-sidebar-filter mt-3">
+                    <div class="product-sidebar-filter mt-3 d-none d-lg-block">
                         <div class="filter-title">
                             <i class="fa fa-tag me-2" style="font-size: 14px;"></i> Products
                         </div>
 
                         <ul class="product-category-list" id="supplier-cat-filter">
-                            <li class="active cat-item-all" data-id="0">
+                            <li class="active cat-item-all" data-id="0" data-name="All">
                                 <a href="#">
                                     <span>All</span>
                                     <span class="count-badge"><?php echo count($all_product_ids); ?></span>
                                 </a>
                             </li>
-
                             <?php 
-                                if ( isset( $terms_by_parent[0] ) ) {
-                                    render_supplier_cats_recursive( 0, $terms_by_parent ); 
-                                }
-                                ?>
+                            if ( isset( $terms_by_parent[0] ) ) {
+                                render_supplier_cats_recursive( 0, $terms_by_parent ); 
+                            }
+                            ?>
                         </ul>
+                    </div>
+
+                    <div class="mobile-filter-wrapper d-block d-lg-none mt-3">
+                        <div class="dropdown-container">
+                            <button class="mobile-cat-toggle d-flex justify-content-between align-items-center w-100" 
+                                    type="button" 
+                                    data-bs-toggle="collapse" 
+                                    data-bs-target="#mobileCatList" 
+                                    aria-expanded="false">
+                                <span id="mobile-current-cat">All</span>
+                                <i class="fa fa-chevron-down transition-transform"></i>
+                            </button>
+
+                            <div class="collapse" id="mobileCatList">
+                                <div class="mobile-cat-body">
+                                    <ul class="product-category-list mobile-list-style" id="supplier-cat-filter-mobile">
+                                        <li class="active cat-item-all" data-id="0" data-name="All">
+                                            <a href="#">
+                                                <span>All</span>
+                                                <span class="count-badge"><?php echo count($all_product_ids); ?></span>
+                                            </a>
+                                        </li>
+                                        <?php 
+                                        if ( isset( $terms_by_parent[0] ) ) {
+                                            render_supplier_cats_recursive( 0, $terms_by_parent ); 
+                                        }
+                                        ?>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -456,28 +483,44 @@ jQuery(document).ready(function($) {
     var btnMore = $('#btn-load-more-products');
     var listContainer = $('#supplier-product-list');
     var loading = $('#prod-loading');
-    $('#supplier-cat-filter').on('click', 'li > a', function(e) {
+
+    // Hàm xử lý Click chung cho cả Desktop và Mobile
+    function handleCategoryClick(e) {
         e.preventDefault();
-        e.stopPropagation(); // Ngăn sự kiện nổi lên cha
+        e.stopPropagation();
 
-        var clickedLi = $(this).parent('li');
-
-        // UI Active: Xóa active cũ, thêm active mới
-        $('#supplier-cat-filter li').removeClass('active');
-        clickedLi.addClass('active');
-
-        // Lấy dữ liệu
+        var clickedLink = $(this);
+        var clickedLi = clickedLink.parent('li');
         var cat_id = clickedLi.data('id');
-        var supplier_id = btnMore.data('supplier') || <?php echo $supplier_id; ?>;
+        
+        // Lấy tên danh mục (text của thẻ span đầu tiên)
+        var cat_name = clickedLink.find('span:first-child').text(); 
 
-        // Reset nút Load More
+        // 1. UI Active: Xóa active cũ, thêm active mới cho CẢ 2 list
+        $('#supplier-cat-filter li, #supplier-cat-filter-mobile li').removeClass('active');
+        
+        // Active item tương ứng ở cả 2 list (dựa vào data-id)
+        $('#supplier-cat-filter li[data-id="'+cat_id+'"]').addClass('active');
+        $('#supplier-cat-filter-mobile li[data-id="'+cat_id+'"]').addClass('active');
+
+        // 2. Mobile Specific: Cập nhật text hiển thị và đóng dropdown
+        $('#mobile-current-cat').text(cat_name);
+        
+        // Đóng dropdown mobile nếu đang mở
+        var mobileCollapse = document.getElementById('mobileCatList');
+        if (mobileCollapse && mobileCollapse.classList.contains('show')) {
+            var bsCollapse = bootstrap.Collapse.getInstance(mobileCollapse);
+            if(bsCollapse) bsCollapse.hide();
+        }
+
+        // 3. Reset logic Load More
+        var supplier_id = btnMore.data('supplier') || <?php echo $supplier_id; ?>;
         btnMore.data('page', 1);
         btnMore.data('cat', cat_id);
 
-        // Loading effect
+        // 4. Loading Effect & AJAX
         listContainer.css('opacity', '0.5');
 
-        // AJAX
         $.ajax({
             url: '<?php echo admin_url("admin-ajax.php"); ?>',
             type: 'POST',
@@ -492,7 +535,7 @@ jQuery(document).ready(function($) {
                 if (res.success) {
                     listContainer.html(res.data.html);
 
-                    // Update max page & show/hide button
+                    // Cập nhật nút Load More
                     btnMore.data('max', res.data.max_page);
                     if (res.data.max_page > 1) {
                         btnMore.show();
@@ -502,12 +545,14 @@ jQuery(document).ready(function($) {
                 }
             }
         });
-    });
+    }
 
-    // 2. Xử lý Load More
+    // Gán sự kiện click cho cả 2 menu
+    $('#supplier-cat-filter li > a, #supplier-cat-filter-mobile li > a').on('click', handleCategoryClick);
+
+    // --- Logic Load More (Giữ nguyên) ---
     btnMore.on('click', function(e) {
         e.preventDefault();
-
         var current_page = $(this).data('page');
         var max_page = $(this).data('max');
         var cat_id = $(this).data('cat');
@@ -516,7 +561,6 @@ jQuery(document).ready(function($) {
         if (current_page >= max_page) return;
 
         var next_page = current_page + 1;
-
         btnMore.hide();
         loading.show();
 
@@ -548,80 +592,143 @@ jQuery(document).ready(function($) {
 });
 </script>
 
+
 <?php
     $current_supplier_id = get_the_ID();
-    $initial_limit = 15; // Mặc định Desktop load 15 bài đầu tiên
+    
+    // --- LẤY DỮ LIỆU ---
+    $all_partner_ids = [];
+    $group_data = get_field('supplier_partners', $current_supplier_id);
+    if ( $group_data && !empty($group_data['partner']) ) {
+        $all_partner_ids = $group_data['partner']; 
+        if ( !is_array($all_partner_ids) ) $all_partner_ids = [ $all_partner_ids ];
+    }
+    
+    $total_items = count($all_partner_ids);
 
-    $fetcher = new Dezon_Remote_Project_Fetcher();
-    // Load lần đầu (Offset 0)
-    $partners = $fetcher->get_partners_via_supplier_projects( $current_supplier_id, $initial_limit, 0 );
+    // Config Limit
+    $limit_desktop = 15;
+    $limit_mobile  = 5;
 
-    if ( !empty($partners) ) :
-        $partner_chunks = array_chunk($partners, ceil(count($partners)/3));
+    // Lấy data cho Desktop (15 item)
+    $desktop_ids = array_slice($all_partner_ids, 0, $limit_desktop);
+    
+    // Helper lấy thông tin
+    $fn_get_partner_data = function($ids) {
+        $result = [];
+        if ( !empty($ids) ) {
+            foreach ( $ids as $term_id ) {
+                $term = get_term( $term_id );
+                if ( ! is_wp_error( $term ) && $term ) {
+                    $thumbnail_id = get_term_meta( $term_id, 'thumbnail_id', true ); 
+                    $logo_url = $thumbnail_id ? wp_get_attachment_image_url( $thumbnail_id, 'full' ) : ''; 
+                    $result[] = [
+                        'id'    => $term_id,
+                        'title' => $term->name,
+                        'link'  => get_term_link( $term ),
+                        'logo'  => $logo_url
+                    ];
+                }
+            }
+        }
+        return $result;
+    };
+
+    $partners_desktop = $fn_get_partner_data($desktop_ids);
+
+    if ( ! empty( $partners_desktop ) ) : 
+        // Chunk cho desktop (3 cột)
+        $partner_chunks = array_chunk($partners_desktop, ceil(count($partners_desktop)/3));
         $partner_chunks = array_pad($partner_chunks, 3, []); 
     ?>
 
-<div id="doi-tac" class="partner_tt section-padding pb-5">
+<div id="thuong-hieu" class="partner_tt section-padding pb-5">
     <div class="container">
         <div class="row">
             <div class="col-lg-3 mb-4 mb-lg-0">
                 <div class="sticky-top sticky-intro-label">
-                    <span class="fs-18 fw-bold">Được tin tưởng bởi các đối tác</span>
+                    <span class="fs-18 fw-bold">Thương hiệu</span>
                 </div>
             </div>
 
             <div class="col-lg-9">
-                <div class="row">
-                    <?php 
-                        foreach ($partner_chunks as $index => $column_partners): 
-                            $col_id = 'partner-col-' . $index;
-                            // QUAN TRỌNG: Không thêm d-none bằng PHP nữa để tránh lỗi ẩn dữ liệu
-                            // Thay vào đó chỉ thêm class partner-col để JS xử lý
-                            $col_class = 'col-xl-4 col-md-4 partner-col'; 
-                            
-                            // Chỉ ẩn trên mobile ở lần load ĐẦU TIÊN (CSS inline hoặc class riêng)
-                            // Nếu bạn muốn mobile hiện cả 15 bài đầu tiên thì bỏ dòng if dưới đi
-                            if ($index > 0) $col_class .= ' d-md-block d-none';
-                        ?>
-                    <div class="<?php echo esc_attr($col_class); ?>" id="<?php echo esc_attr($col_id); ?>">
-                        <div class="list_partner mb-xl-0">
-                            <?php 
-                                    if (!empty($column_partners)) :
-                                        foreach ($column_partners as $p) : 
-                                            // ... (Render item giữ nguyên) ...
-                                            ?>
-                            <a href="<?php echo esc_url($p['link']); ?>" target="_blank" class="text-reset"
-                                title="<?php echo esc_attr($p['title']); ?>">
-                                <div class="d-flex mb-3 align-items-center">
-                                    <img src="<?php echo esc_url($p['logo']); ?>"
-                                        style="width: auto; height: 20px; object-fit: contain;"
-                                        alt="<?php echo esc_attr($p['title']); ?>">
-                                    <p class="mb-0 ms-2 text-truncate"><?php echo esc_html($p['title']); ?></p>
-                                </div>
-                            </a>
-                            <?php
-                                        endforeach; 
-                                    endif;
-                                    ?>
+                
+                <div class="desktop-brand-view d-none d-md-block">
+                    <div class="row" id="brand-desktop-list">
+                        <?php foreach ($partner_chunks as $index => $column_partners): ?>
+                        <div class="col-xl-4 col-md-4" id="brand-desktop-col-<?php echo $index; ?>">
+                            <div class="list_partner mb-xl-0">
+                                <?php if (!empty($column_partners)) : foreach ($column_partners as $p) : ?>
+                                    <a href="<?php echo esc_url($p['link']); ?>" target="_blank" class="text-reset partner-item-anim" title="<?php echo esc_attr($p['title']); ?>">
+                                        <div class="d-flex mb-3 align-items-center">
+                                            <?php if($p['logo']): ?>
+                                            <img src="<?php echo esc_url($p['logo']); ?>" style="width: auto; height: 20px; object-fit: contain;" alt="<?php echo esc_attr($p['title']); ?>">
+                                            <?php else: ?>
+                                                <span class="fw-bold fs-14" style="width: 20px; display:inline-block;">•</span>
+                                            <?php endif; ?>
+                                            <p class="mb-0 ms-2 text-truncate"><?php echo esc_html($p['title']); ?></p>
+                                        </div>
+                                    </a>
+                                <?php endforeach; endif; ?>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <?php if ( $total_items > $limit_desktop ) : ?>
+                    <div class="text-center mt-4 position-relative" style="z-index: 5;">
+                        <button type="button" class="btn-load-more-brands btn btn-black rounded-pill fs-14 px-4 btn_view_more btn-intro-view"
+                            data-device="desktop"
+                            data-supplier="<?php echo $current_supplier_id; ?>" 
+                            data-offset="<?php echo $limit_desktop; ?>"
+                            data-limit="15"> Xem thêm
+                        </button>
+                        <div class="loading-spinner mt-2" style="display:none;">
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                         </div>
                     </div>
-                    <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
 
-                <?php if (count($partners) >= $initial_limit) : ?>
-                <div class="text-center mt-4 position-relative" style="z-index: 5;">
-                    <button type="button" id="btn-load-more-partners"
-                        class="btn btn-black rounded-pill fs-14 px-4 btn_view_more btn-intro-view"
-                        data-supplier="<?php echo $current_supplier_id; ?>" data-offset="<?php echo $initial_limit; ?>">
-                        Xem thêm
-                    </button>
-
-                    <div id="partner-loading" class="mt-2" style="display:none;">
-                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang
-                        tải...
+                <div class="mobile-brand-view d-block d-md-none">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="list_partner" id="brand-mobile-list">
+                                <?php 
+                                // Cắt 5 item cho mobile
+                                $partners_mobile = array_slice($partners_desktop, 0, $limit_mobile);
+                                foreach ($partners_mobile as $p) : 
+                                ?>
+                                    <a href="<?php echo esc_url($p['link']); ?>" target="_blank" class="text-reset partner-item-anim" title="<?php echo esc_attr($p['title']); ?>">
+                                        <div class="d-flex mb-3 align-items-center">
+                                            <?php if($p['logo']): ?>
+                                            <img src="<?php echo esc_url($p['logo']); ?>" style="width: auto; height: 20px; object-fit: contain;" alt="<?php echo esc_attr($p['title']); ?>">
+                                            <?php else: ?>
+                                                <span class="fw-bold fs-14" style="width: 20px; display:inline-block;">•</span>
+                                            <?php endif; ?>
+                                            <p class="mb-0 ms-2 text-truncate"><?php echo esc_html($p['title']); ?></p>
+                                        </div>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
                     </div>
+
+                    <?php if ( $total_items > $limit_mobile ) : ?>
+                    <div class="text-center mt-4 position-relative" style="z-index: 5;">
+                        <button type="button" class="btn-load-more-brands btn btn-black rounded-pill fs-14 px-4 btn_view_more btn-intro-view"
+                            data-device="mobile"
+                            data-supplier="<?php echo $current_supplier_id; ?>" 
+                            data-offset="<?php echo $limit_mobile; ?>"
+                            data-limit="5"> Xem thêm
+                        </button>
+                        <div class="loading-spinner mt-2" style="display:none;">
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                 </div>
-                <?php endif; ?>
+
             </div>
         </div>
     </div>
@@ -629,22 +736,16 @@ jQuery(document).ready(function($) {
 
 <script type="text/javascript">
 jQuery(document).ready(function($) {
-    $('#btn-load-more-partners').on('click', function(e) {
+    $('.btn-load-more-brands').on('click', function(e) {
         e.preventDefault();
-
         var button = $(this);
-        var spinner = $('#partner-loading');
+        var container = button.parent();
+        var spinner = container.find('.loading-spinner');
+        
+        var device      = button.data('device');
         var supplier_id = button.data('supplier');
-        var current_offset = button.data('offset');
-
-        // --- LOGIC PHÁT HIỆN MOBILE ---
-        // Nếu màn hình < 768px thì limit = 5, ngược lại 15
-        var isMobile = $(window).width() < 768;
-        var dynamic_limit = isMobile ? 5 : 15;
-
-        // In ra console để kiểm tra (F12)
-        console.log('Đang chạy trên mobile?', isMobile);
-        console.log('Số lượng sẽ load:', dynamic_limit);
+        var offset      = button.data('offset');
+        var limit       = button.data('limit');
 
         button.hide();
         spinner.show();
@@ -655,28 +756,25 @@ jQuery(document).ready(function($) {
             data: {
                 action: 'load_more_partners',
                 supplier_id: supplier_id,
-                offset: current_offset,
-                limit: dynamic_limit // Gửi số 5 hoặc 15 lên Server
+                offset: offset,
+                limit: limit
             },
             success: function(response) {
                 spinner.hide();
-
                 if (response.success) {
                     var items = response.data.items;
-                    var loaded_count = response.data.loaded;
 
-                    // Gỡ class ẩn để Mobile thấy dữ liệu ở cột 2, 3 (nếu có chia vào đó)
-                    $('.partner-col').removeClass('d-none');
-
-                    $.each(items, function(index, html) {
-                        var colIndex = index % 3;
-                        $('#partner-col-' + colIndex + ' .list_partner').append(
-                            html);
-                    });
-
-                    // Cập nhật Offset mới
-                    button.data('offset', current_offset + loaded_count);
-
+                    if (device === 'mobile') {
+                        $.each(items, function(index, html) {
+                            $('#brand-mobile-list').append(html);
+                        });
+                    } else {
+                        $.each(items, function(index, html) {
+                            var colIndex = index % 3;
+                            $('#brand-desktop-col-' + colIndex + ' .list_partner').append(html);
+                        });
+                    }
+                    button.data('offset', offset + response.data.loaded);
                     if (response.data.has_more) {
                         button.show();
                     } else {
@@ -689,7 +787,6 @@ jQuery(document).ready(function($) {
             error: function() {
                 spinner.hide();
                 button.show();
-                alert('Lỗi kết nối.');
             }
         });
     });
@@ -697,7 +794,175 @@ jQuery(document).ready(function($) {
 </script>
 <?php endif; ?>
 
+<?php
+    $fetcher_remote = new Dezon_Remote_Project_Fetcher();
+    $current_supplier_id = get_the_ID();
+    $limit_desktop = 15;
+    $limit_mobile  = 5;
+    $remote_partners = $fetcher_remote->get_partners_via_supplier_projects( $current_supplier_id, $limit_desktop, 0 );
 
+    $total_remote_partners = $fetcher_remote->count_total_partners($current_supplier_id);
+
+    if ( ! empty( $remote_partners ) ) :
+        $studio_chunks = array_chunk($remote_partners, ceil(count($remote_partners)/3));
+        $studio_chunks = array_pad($studio_chunks, 3, []); 
+    ?>
+
+<div id="doi-tac" class="partner_tt section-padding pb-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-3 mb-4 mb-lg-0">
+                <div class="sticky-top sticky-intro-label">
+                    <span class="fs-18 fw-bold">Được tin tưởng bởi các đối tác</span>
+                </div>
+            </div>
+
+            <div class="col-lg-9">
+                
+                <div class="desktop-partner-view d-none d-md-block">
+                    <div class="row" id="remote-desktop-list">
+                        <?php foreach ($studio_chunks as $index => $column_studios): ?>
+                        <div class="col-xl-4 col-md-4" id="remote-desktop-col-<?php echo $index; ?>">
+                            <div class="list_partner mb-xl-0">
+                                <?php if (!empty($column_studios)) : foreach ($column_studios as $p) : 
+                                    $logo_src = $p['logo'] ? $p['logo'] : get_template_directory_uri() . '/assets/images/partner-default.png';
+                                ?>
+                                <a href="<?php echo esc_url($p['link']); ?>" target="_blank" class="text-reset partner-item-anim" title="<?php echo esc_attr($p['title']); ?>">
+                                    <div class="d-flex mb-3 align-items-center">
+                                        <?php if($p['logo']): ?>
+                                            <img src="<?php echo esc_url($logo_src); ?>" style="width: auto; height: 20px; object-fit: contain;" alt="<?php echo esc_attr($p['title']); ?>">
+                                        <?php else: ?>
+                                            <span class="fw-bold fs-14" style="width: 20px; display:inline-block;">•</span>
+                                        <?php endif; ?>
+                                        <p class="mb-0 ms-2 text-truncate"><?php echo esc_html($p['title']); ?></p>
+                                    </div>
+                                </a>
+                                <?php endforeach; endif; ?>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    
+                    <?php if ( $total_remote_partners > $limit_desktop ) : ?>
+                    <div class="text-center mt-4 position-relative" style="z-index: 5;">
+                        <button type="button" class="btn-load-more-remote btn btn-black rounded-pill fs-14 px-4 btn_view_more btn-intro-view"
+                            data-device="desktop"
+                            data-supplier="<?php echo $current_supplier_id; ?>"
+                            data-offset="<?php echo $limit_desktop; ?>"
+                            data-limit="15">
+                            Xem thêm
+                        </button>
+                        <div class="loading-spinner mt-2" style="display:none;">
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                </div>
+
+                <div class="mobile-partner-view d-block d-md-none">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="list_partner" id="remote-mobile-list">
+                                <?php 
+                                $mobile_partners = array_slice($remote_partners, 0, $limit_mobile);
+                                foreach ($mobile_partners as $p) : 
+                                    $logo_src = $p['logo'] ? $p['logo'] : get_template_directory_uri() . '/assets/images/partner-default.png';
+                                ?>
+                                <a href="<?php echo esc_url($p['link']); ?>" target="_blank" class="text-reset partner-item-anim" title="<?php echo esc_attr($p['title']); ?>">
+                                    <div class="d-flex mb-3 align-items-center">
+                                        <?php if($p['logo']): ?>
+                                            <img src="<?php echo esc_url($logo_src); ?>" style="width: auto; height: 20px; object-fit: contain;" alt="<?php echo esc_attr($p['title']); ?>">
+                                        <?php else: ?>
+                                            <span class="fw-bold fs-14" style="width: 20px; display:inline-block;">•</span>
+                                        <?php endif; ?>
+                                        <p class="mb-0 ms-2 text-truncate"><?php echo esc_html($p['title']); ?></p>
+                                    </div>
+                                </a>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    </div>
+
+                    <?php if ( $total_remote_partners > $limit_mobile ) : ?>
+                    <div class="text-center mt-4 position-relative" style="z-index: 5;">
+                        <button type="button" class="btn-load-more-remote btn btn-black rounded-pill fs-14 px-4 btn_view_more btn-intro-view"
+                            data-device="mobile"
+                            data-supplier="<?php echo $current_supplier_id; ?>"
+                            data-offset="<?php echo $limit_mobile; ?>"
+                            data-limit="5">
+                            Xem thêm
+                        </button>
+                        <div class="loading-spinner mt-2" style="display:none;">
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+jQuery(document).ready(function($) {
+    $('.btn-load-more-remote').on('click', function(e) {
+        e.preventDefault();
+        var button = $(this);
+        var container = button.parent();
+        var spinner = container.find('.loading-spinner');
+        
+        var device      = button.data('device');
+        var supplier_id = button.data('supplier');
+        var offset      = button.data('offset');
+        var limit       = button.data('limit');
+
+        button.hide();
+        spinner.show();
+
+        $.ajax({
+            url: '<?php echo admin_url("admin-ajax.php"); ?>',
+            type: 'POST',
+            data: {
+                action: 'load_more_remote_studios',
+                supplier_id: supplier_id,
+                offset: offset,
+                limit: limit
+            },
+            success: function(response) {
+                spinner.hide();
+                if (response.success) {
+                    var items = response.data.items;
+
+                    if (device === 'mobile') {
+                        $.each(items, function(index, html) {
+                            $('#remote-mobile-list').append(html);
+                        });
+                    } else {
+                        $.each(items, function(index, html) {
+                            var colIndex = index % 3;
+                            $('#remote-desktop-col-' + colIndex + ' .list_partner').append(html);
+                        });
+                    }
+                    button.data('offset', offset + response.data.loaded);
+                    if (response.data.has_more) {
+                        button.show();
+                    } else {
+                        button.remove();
+                    }
+                } else {
+                    button.remove();
+                }
+            },
+            error: function() {
+                spinner.hide();
+                button.show();
+            }
+        });
+    });
+});
+</script>
+<?php endif; ?>
 
 <?php
 $current_supplier_id = get_the_ID();
@@ -817,15 +1082,13 @@ jQuery(document).ready(function($) {
 <?php endif; ?>
 
 <?php
-// 1. Lấy dữ liệu Repeater
 $current_supplier_id = get_the_ID();
-$all_videos = get_field('video');
+$all_videos_flat = get_supplier_videos_flattened($current_supplier_id);
 $initial_limit = 4;
 
-if ($all_videos) :
-    // Cắt lấy 4 video đầu tiên
-    $initial_videos = array_slice($all_videos, 0, $initial_limit);
-    $total_videos = count($all_videos);
+if (!empty($all_videos_flat)) :
+    $initial_videos = array_slice($all_videos_flat, 0, $initial_limit);
+    $total_videos = count($all_videos_flat);
 ?>
 
 <div id="video" class="video_tt section-padding pb-5">
@@ -838,61 +1101,27 @@ if ($all_videos) :
             </div>
 
             <div class="col-lg-9">
-
                 <div class="podcast_list">
                     <div class="row gy-4" id="video-list-ajax">
 
-                        <?php 
-                        foreach ($initial_videos as $row) : 
-                            $item = isset($row['manual_content']) ? $row['manual_content'] : [];
-                            if (empty($item)) continue;
-
-                            $title  = isset($item['title']) ? $item['title'] : '';
-                            $minute = isset($item['minute']) ? $item['minute'] : '';
-                            $image  = isset($item['image']) ? $item['image'] : '';
-                            
-                            // Xử lý Link Video
-                            $type = isset($item['manual_type']) ? $item['manual_type'] : '';
-                            $video_url = '#';
-
-                            if ($type === 'link') {
-                                $video_url = isset($item['link_video']) ? $item['link_video'] : '#';
-                            } elseif ($type === 'file') {
-                                $file_data = isset($item['file_video']) ? $item['file_video'] : '';
-                                if (is_array($file_data)) {
-                                    $video_url = isset($file_data['url']) ? $file_data['url'] : '#';
-                                } else {
-                                    $video_url = $file_data;
-                                }
-                            }
-
-                            // Xử lý Ảnh Thumbnail ($img_url)
-                            $img_url = '';
-                            if (is_array($image)) {
-                                $img_url = isset($image['url']) ? $image['url'] : '';
-                            } else {
-                                $img_url = $image;
-                            }
-                            // Ảnh mặc định nếu không có ảnh
-                            if (empty($img_url)) $img_url = get_template_directory_uri() . '/assets/images/gallery1.jpg'; 
-                        ?>
-
+                        <?php foreach ($initial_videos as $vid) : ?>
                         <div class="col-lg-3">
                             <div class="item">
                                 <figure class="mb-0 position-relative rounded-3 overflow-hidden">
-                                    <a href="<?php echo esc_url($video_url); ?>" 
-                                    class="d-block w-100 position-relative ratio-2-3"
-                                    data-fancybox="supplier-video" 
-                                    data-caption="<?php echo esc_attr($title); ?>">
-                                    
-                                        <img src="<?php echo esc_url($img_url); ?>"
+                                    <a href="<?php echo esc_url($vid['video_url']); ?>"
+                                        class="d-block w-100 position-relative ratio-9-16"
+                                        data-fancybox="supplier-video"
+                                        data-caption="<?php echo esc_attr($vid['title']); ?>">
+
+                                        <img src="<?php echo esc_url($vid['img_url']); ?>"
                                             class="position-absolute top-0 start-0 w-100 h-100 object-fit-cover img-zoom-hover"
-                                            alt="<?php echo esc_attr($title); ?>">
+                                            alt="<?php echo esc_attr($vid['title']); ?>">
 
                                         <div class="overlay-gradient-bottom">
-                                            <h4 class="fs-24 fw-medium text-white mb-3 pe-auto" style="line-height: 1.4;">
+                                            <h4 class="fs-18 fw-medium text-white mb-3 pe-auto"
+                                                style="line-height: 1.4;">
                                                 <span class="text-white text-decoration-none">
-                                                    <?php echo esc_html($title); ?>
+                                                    <?php echo esc_html($vid['title']); ?>
                                                 </span>
                                             </h4>
 
@@ -903,24 +1132,25 @@ if ($all_videos) :
                                                             <i class="fa fa-play fs-12 ms-1"></i>
                                                         </span>
                                                     </li>
-                                                    <?php if ($minute) : ?>
+                                                    <?php if ($vid['minute']) : ?>
                                                     <li>
-                                                        <span class="time-badge"><?php echo esc_html($minute); ?> phút</span>
+                                                        <span class="time-badge"><?php echo esc_html($vid['minute']); ?>
+                                                            phút</span>
                                                     </li>
                                                     <?php endif; ?>
                                                 </ul>
                                                 <div class="action">
                                                     <span class="btn-action-circle">
-                                                        <img src="<?php echo get_template_directory_uri(); ?>/assets/images/dots.svg" class="img-fluid"
-                                                            style="height: 14px;" alt="More">
+                                                        <img src="<?php echo get_template_directory_uri(); ?>/assets/images/dots.svg"
+                                                            class="img-fluid" style="height: 14px;" alt="More">
                                                     </span>
                                                 </div>
                                             </div>
                                         </div>
-                                    </a> </figure>
+                                    </a>
+                                </figure>
                             </div>
                         </div>
-
                         <?php endforeach; ?>
 
                     </div>
@@ -928,15 +1158,14 @@ if ($all_videos) :
 
                 <?php if ($total_videos > $initial_limit) : ?>
                 <div class="text-center mt-4 position-relative" style="z-index: 5;">
-                    <button type="button" id="btn-load-more-videos" 
-                            class="btn btn-black rounded-pill fs-14 px-4 btn_view_more btn-intro-view"
-                            data-supplier="<?php echo $current_supplier_id; ?>"
-                            data-offset="<?php echo $initial_limit; ?>">
+                    <button type="button" id="btn-load-more-videos"
+                        class="btn btn-black rounded-pill fs-14 px-4 btn_view_more btn-intro-view"
+                        data-supplier="<?php echo $current_supplier_id; ?>" data-offset="<?php echo $initial_limit; ?>">
                         Xem thêm
                     </button>
-                    
+
                     <div id="video-loading" class="mt-2" style="display:none;">
-                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                         Đang tải...
                     </div>
                 </div>
@@ -975,17 +1204,15 @@ jQuery(document).ready(function($) {
                     var items = response.data.items;
                     var loaded_count = response.data.loaded;
 
-                    // Append từng item
                     $.each(items, function(index, html) {
                         var $html = $(html).hide();
                         $('#video-list-ajax').append($html);
                         $html.fadeIn(400);
                     });
 
-                    // Cập nhật offset
-                    button.data('offset', current_offset + loaded_count);
+                    current_offset += loaded_count;
+                    button.data('offset', current_offset);
 
-                    // Kiểm tra còn video không
                     if (response.data.has_more) {
                         button.show();
                     } else {
@@ -1121,20 +1348,19 @@ jQuery(document).ready(function($) {
     </div>
 </div>
 
-
 <?php
     // 1. Lấy dữ liệu
     $current_supplier_id = get_the_ID();
-    $initial_limit = 12; // Desktop load 12
+    $limit_desktop = 12; // Load 12 item cho Desktop
+    $limit_mobile  = 4;  // Load 4 item cho Mobile
 
     $documents = get_supplier_documents_flattened( $current_supplier_id );
+    $total_docs = count($documents);
 
     if ( ! empty( $documents ) ) : 
-        // Cắt 12 item đầu tiên
-        $display_docs = array_slice( $documents, 0, $initial_limit );
-        
-        // Chia đều vào 3 cột
-        $doc_chunks = array_chunk($display_docs, ceil(count($display_docs)/3));
+        // Lấy list cho desktop và chia làm 3 cột
+        $docs_desktop = array_slice($documents, 0, $limit_desktop);
+        $doc_chunks = array_chunk($docs_desktop, ceil(count($docs_desktop)/3));
         $doc_chunks = array_pad($doc_chunks, 3, []);
     ?>
 
@@ -1148,45 +1374,82 @@ jQuery(document).ready(function($) {
             </div>
 
             <div class="col-lg-9">
-                <div class="row">
-                    <?php foreach ($doc_chunks as $index => $column_docs): 
-                            $col_id = 'doc-col-' . $index;
-                            $col_class = 'col-xl-4 col-md-4 doc-col';
-                            if ($index > 0) $col_class .= ' d-md-block d-none';
-                        ?>
-                    <div class="<?php echo esc_attr($col_class); ?>" id="<?php echo esc_attr($col_id); ?>">
-                        <div class="doc-list-wrapper">
-                            <?php if (!empty($column_docs)) : foreach ($column_docs as $doc) : ?>
-                            <div class="list_partner mb-xl-0 cl-blue mb-3">
-                                <a href="<?php echo esc_url($doc['url']); ?>" target="_blank" class="text-reset"
-                                    title="<?php echo esc_attr($doc['title']); ?>">
-                                    <div class="d-flex mb-3 align-items-center">
-                                        <img src="<?php echo esc_url($doc['icon']); ?>"
-                                            style="width: auto; height: 20px; object-fit: contain;" alt="">
-                                        <p class="mb-0 ms-2 text-truncate"><?php echo esc_html($doc['title']); ?></p>
-                                    </div>
-                                </a>
+                
+                <div class="desktop-doc-view d-none d-md-block">
+                    <div class="row" id="doc-desktop-list">
+                        <?php foreach ($doc_chunks as $index => $column_docs): ?>
+                        <div class="col-xl-4 col-md-4" id="doc-desktop-col-<?php echo $index; ?>">
+                            <div class="doc-list-wrapper">
+                                <?php if (!empty($column_docs)) : foreach ($column_docs as $doc) : ?>
+                                <div class="list_partner mb-xl-0 cl-blue mb-3 doc-item-anim">
+                                    <a href="<?php echo esc_url($doc['url']); ?>" target="_blank" class="text-reset"
+                                        title="<?php echo esc_attr($doc['title']); ?>">
+                                        <div class="d-flex mb-3 align-items-center">
+                                            <img src="<?php echo get_template_directory_uri(); ?>/assets/images/img-pdf.jpg"
+                                                style="width: auto; height: 20px; object-fit: contain;" alt="">
+                                            <p class="mb-0 ms-2 text-truncate"><?php echo esc_html( $doc['title'] ); ?></p>
+                                        </div>
+                                    </a>
+                                </div>
+                                <?php endforeach; endif; ?>
                             </div>
-                            <?php endforeach; endif; ?>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <?php if ( $total_docs > $limit_desktop ) : ?>
+                    <div class="text-center mt-4 position-relative" style="z-index: 5;">
+                        <button type="button" class="btn-load-more-docs btn btn-black rounded-pill fs-14 px-4 btn_view_more btn-intro-view"
+                            data-device="desktop"
+                            data-supplier="<?php echo $current_supplier_id; ?>" 
+                            data-offset="<?php echo $limit_desktop; ?>"
+                            data-limit="12">
+                            Xem thêm
+                        </button>
+                        <div class="loading-spinner mt-2" style="display:none;">
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                         </div>
                     </div>
-                    <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
 
-                <?php if ( count($documents) > $initial_limit ) : ?>
-                <div class="text-center mt-4 position-relative" style="z-index: 5;">
-                    <button type="button" id="btn-load-more-docs"
-                        class="btn btn-black rounded-pill fs-14 px-4 btn_view_more btn-intro-view"
-                        data-supplier="<?php echo $current_supplier_id; ?>" data-offset="<?php echo $initial_limit; ?>">
-                        Xem thêm
-                    </button>
-
-                    <div id="doc-loading" class="mt-2" style="display:none;">
-                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang
-                        tải...
+                <div class="mobile-doc-view d-block d-md-none">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="doc-list-wrapper" id="doc-mobile-list">
+                                <?php 
+                                $docs_mobile = array_slice($documents, 0, $limit_mobile);
+                                foreach ($docs_mobile as $doc) : 
+                                ?>
+                                <div class="list_partner mb-xl-0 cl-blue mb-3 doc-item-anim">
+                                    <a href="<?php echo esc_url($doc['url']); ?>" target="_blank" class="text-reset" title="<?php echo esc_attr($doc['title']); ?>">
+                                        <div class="d-flex mb-3 align-items-center">
+                                            <img src="<?php echo get_template_directory_uri(); ?>/assets/images/img-pdf.jpg" style="width: auto; height: 20px; object-fit: contain;" alt="">
+                                            <p class="mb-0 ms-2 text-truncate"><?php echo esc_html( $doc['title'] ); ?></p>
+                                        </div>
+                                    </a>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
                     </div>
+
+                    <?php if ( $total_docs > $limit_mobile ) : ?>
+                    <div class="text-center mt-4 position-relative" style="z-index: 5;">
+                        <button type="button" class="btn-load-more-docs btn btn-black rounded-pill fs-14 px-4 btn_view_more btn-intro-view"
+                            data-device="mobile"
+                            data-supplier="<?php echo $current_supplier_id; ?>" 
+                            data-offset="<?php echo $limit_mobile; ?>"
+                            data-limit="4">
+                            Xem thêm
+                        </button>
+                        <div class="loading-spinner mt-2" style="display:none;">
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                 </div>
-                <?php endif; ?>
+
             </div>
         </div>
     </div>
@@ -1194,17 +1457,17 @@ jQuery(document).ready(function($) {
 
 <script type="text/javascript">
 jQuery(document).ready(function($) {
-    $('#btn-load-more-docs').on('click', function(e) {
+    $('.btn-load-more-docs').on('click', function(e) {
         e.preventDefault();
 
         var button = $(this);
-        var spinner = $('#doc-loading');
+        var container = button.parent();
+        var spinner = container.find('.loading-spinner');
+        
+        var device      = button.data('device');
         var supplier_id = button.data('supplier');
-        var current_offset = button.data('offset');
-
-        // --- LOGIC MOBILE ---
-        var isMobile = $(window).width() < 768;
-        var dynamic_limit = isMobile ? 4 : 12;
+        var offset      = button.data('offset');
+        var limit       = button.data('limit');
 
         button.hide();
         spinner.show();
@@ -1215,26 +1478,28 @@ jQuery(document).ready(function($) {
             data: {
                 action: 'load_more_documents',
                 supplier_id: supplier_id,
-                offset: current_offset,
-                limit: dynamic_limit
+                offset: offset,
+                limit: limit
             },
             success: function(response) {
                 spinner.hide();
                 if (response.success) {
                     var items = response.data.items;
-                    var loaded_count = response.data.loaded;
 
-                    // Gỡ class ẩn để Mobile thấy dữ liệu ở cột 2, 3
-                    $('.doc-col').removeClass('d-none');
+                    if (device === 'mobile') {
+                        // Mobile: Append thẳng vào cột duy nhất
+                        $.each(items, function(index, html) {
+                            $('#doc-mobile-list').append(html);
+                        });
+                    } else {
+                        // Desktop: Chia đều vào 3 cột
+                        $.each(items, function(index, html) {
+                            var colIndex = index % 3;
+                            $('#doc-desktop-col-' + colIndex + ' .doc-list-wrapper').append(html);
+                        });
+                    }
 
-                    // Chia đều item vào 3 cột
-                    $.each(items, function(index, html) {
-                        var colIndex = index % 3;
-                        $('#doc-col-' + colIndex + ' .doc-list-wrapper').append(
-                            html);
-                    });
-
-                    button.data('offset', current_offset + loaded_count);
+                    button.data('offset', offset + response.data.loaded);
 
                     if (response.data.has_more) {
                         button.show();

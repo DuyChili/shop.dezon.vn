@@ -1,6 +1,6 @@
 <?php
 /**
- * Template Name: Archive Product Custom
+ * Template Name: Archive Brand Custom
  */
 defined( 'ABSPATH' ) || exit;
 
@@ -13,12 +13,12 @@ get_header();
         <div class="row mb-3">
             <div class="col-12">
                 <h1 class="fs-48 fw-medium title_group">
-                   Danh mục sản phẩm: <?php if(is_shop()) { echo 'Cửa hàng'; } else { single_term_title(); } ?>
+                   Thương hiệu: <?php single_term_title(); ?>
                 </h1>
                 
-                <?php if ( category_description() ) : ?>
+                <?php if ( term_description() ) : ?>
                     <div class="archive-description mt-3 fs-18 cl-gray500">
-                        <?php echo category_description(); ?>
+                        <?php echo term_description(); ?>
                     </div>
                 <?php endif; ?>
             </div>
@@ -29,11 +29,18 @@ get_header();
             <div class="row">
                 <?php while ( have_posts() ) : the_post(); 
                     global $product;
-                    $thumb_id = '';
+                    
+                    // Tôi đã tối ưu lại đoạn lấy ảnh này để ưu tiên lấy ảnh đại diện (Featured Image) trước,
+                    // nếu không có mới lấy ảnh đầu tiên trong thư viện (Gallery).
+                    $thumb_id = $product->get_image_id();
+                    
                     if ( ! $thumb_id ) {
                         $gallery_ids = $product->get_gallery_image_ids();
-                        if ( ! empty( $gallery_ids ) ) $thumb_id = $gallery_ids[0];
+                        if ( ! empty( $gallery_ids ) ) {
+                            $thumb_id = $gallery_ids[0];
+                        }
                     }
+                    
                     $thumb_url = $thumb_id ? wp_get_attachment_image_url( $thumb_id, 'large' ) : wc_placeholder_img_src();
                 ?>
                     
@@ -44,7 +51,7 @@ get_header();
                                     <img src="<?php echo esc_url($thumb_url); ?>" class="img-fluid" 
                                          alt="<?php echo esc_attr( get_the_title() ); ?>" loading="lazy">
                                 </a>
-                                </figure>
+                            </figure>
                             
                             <div class="meta_info mt-3">
                                 <h4 class="fs-20 fw-semibold post_title">
@@ -62,11 +69,11 @@ get_header();
 
             <?php 
                 global $wp_query; 
-                // Fix lỗi bắt tham số phân trang
+                // Fix lỗi lấy biến phân trang: Bắt cả 'paged' và 'page'
                 $paged = ( get_query_var( 'paged' ) ) ? get_query_var( 'paged' ) : ( ( get_query_var( 'page' ) ) ? get_query_var( 'page' ) : 1 ); 
                 
                 if ( $wp_query->max_num_pages > 1 ) : 
-                    $big = 999999999;
+                    $big = 999999999; // Một số ngẫu nhiên thật lớn
             ?>
                 <div class="j_paging mt-4" style="position: relative; z-index: 99;">
                     <div class="wp-pagenavi" role="navigation" onclick="event.stopPropagation();">
@@ -84,12 +91,12 @@ get_header();
                                 'mid_size'  => 2,
                             ) );
                             
-                            // Thay thế class để lấy lại giao diện cũ
+                            // Replace các class y như giao diện cũ của bạn
                             if ( $links ) {
-                                $links = str_replace('page-numbers', 'page larger', $links);
-                                $links = str_replace('prev page larger', 'prevpostslink', $links);
-                                $links = str_replace('next page larger', 'nextpostslink', $links);
-                                $links = str_replace('page larger current', 'current', $links);
+                                $links = str_replace("page-numbers", "page larger", $links);
+                                $links = str_replace("prev page larger", "prevpostslink", $links);
+                                $links = str_replace("next page larger", "nextpostslink", $links);
+                                $links = str_replace("page larger current", "current", $links);
                                 echo $links;
                             }
                         ?>
@@ -99,7 +106,7 @@ get_header();
 
         <?php else : ?>
             <div class="alert alert-warning text-center p-5">
-                <p class="fs-20">Không tìm thấy sản phẩm nào trong danh mục này.</p>
+                <p class="fs-20">Không tìm thấy sản phẩm nào của thương hiệu này.</p>
                 <a href="<?php echo home_url('/'); ?>" class="btn btn-black mt-3">Quay lại Cspace</a>
             </div>
         <?php endif; ?>

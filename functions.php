@@ -1125,6 +1125,8 @@ class Dezon_Remote_Project_Fetcher {
 
         return $partners_data;
     }
+
+
     private function get_remote_featured_image_url( $db, $post_id ) {
         $thumb_id = $db->get_var( $db->prepare( "SELECT meta_value FROM {$this->table_prefix}postmeta WHERE post_id = %d AND meta_key = '_thumbnail_id'", $post_id ));
         if ( $thumb_id ) {
@@ -1159,6 +1161,30 @@ class Dezon_Remote_Project_Fetcher {
             ORDER BY p.post_date DESC",
             $like_query
         );
+
+        $results = $remote_db->get_results( $query );
+
+        $choices = [];
+        if ( $results ) {
+            foreach ( $results as $p ) {
+                $choices[ $p->ID ] = $p->post_title;
+            }
+        }
+        
+        return $choices;
+    }
+
+    public function get_all_remote_projects() {
+        $remote_db = $this->get_connection();
+        if ( ! empty( $remote_db->error ) ) return [];
+        
+        // Query đơn giản: Lấy tất cả bài viết là 'project' và đang 'publish'
+        // Không JOIN bảng postmeta để tối ưu tốc độ vì không cần lọc theo supplier
+        $query = "SELECT ID, post_title 
+                  FROM {$this->table_prefix}posts 
+                  WHERE post_type = 'project' 
+                  AND post_status = 'publish' 
+                  ORDER BY post_date DESC";
 
         $results = $remote_db->get_results( $query );
 
@@ -1239,6 +1265,84 @@ class Dezon_Remote_Project_Fetcher {
         return (int)$count;
     }
 
+    // =========================================================================
+    // LẤY DỮ LIỆU MEGA MENU TỪ DB DEZON.VN (SỬ DỤNG CACHE ĐỂ SIÊU NHANH)
+    // =========================================================================
+    public function get_remote_mega_menu_data() {
+        $cache_key = 'remote_mega_menu_data_v2'; // Đổi tên cache để xóa cache cũ
+        $data = get_transient($cache_key);
+
+        if (false !== $data) {
+            return $data;
+        }
+
+        $remote_db = $this->get_connection();
+        if (empty($remote_db) || !empty($remote_db->error)) return false;
+
+        // 1. Kiểm tra xem nút bật Mega Menu có đang bật bên Dezon.vn không
+        $is_enabled = $remote_db->get_var("SELECT option_value FROM {$this->table_prefix}options WHERE option_name = 'options_header_enable_mega_menu_news'");
+        if (!$is_enabled) return false;
+
+        // 2. Đếm số lượng item trong Repeater
+        $count = $remote_db->get_var("SELECT option_value FROM {$this->table_prefix}options WHERE option_name = 'options_header_mega_menu_items'");
+        $count = intval($count);
+        if ($count <= 0) return false;
+
+        $mega_items = [];
+
+        // 3. Lặp qua từng item bóc tách dữ liệu
+        for ($i = 0; $i < $count; $i++) {
+            $prefix = "options_header_mega_menu_items_{$i}_menu_";
+            
+            $term_id  = $remote_db->get_var("SELECT option_value FROM {$this->table_prefix}options WHERE option_name = '{$prefix}mm_selected_category'");
+            $image_id = $remote_db->get_var("SELECT option_value FROM {$this->table_prefix}options WHERE option_name = '{$prefix}mm_image'");
+            $icon_id  = $remote_db->get_var("SELECT option_value FROM {$this->table_prefix}options WHERE option_name = '{$prefix}mm_icon'");
+            $badge    = $remote_db->get_var("SELECT option_value FROM {$this->table_prefix}options WHERE option_name = '{$prefix}mm_badge'");
+            $desc     = $remote_db->get_var("SELECT option_value FROM {$this->table_prefix}options WHERE option_name = '{$prefix}mm_description'");
+
+            // Lấy thông tin Category (Tên, Slug và Danh mục con)
+            $term_name = 'Tiêu đề';
+            $term_link = '#';
+            $has_children = false;
+            $children_html = '';
+
+            if ($term_id) {
+                $term = $remote_db->get_row("SELECT t.name, t.slug FROM {$this->table_prefix}terms t JOIN {$this->table_prefix}term_taxonomy tt ON t.term_id = tt.term_id WHERE t.term_id = " . intval($term_id));
+                if ($term) {
+                    $term_name = $term->name;
+                    $term_link = self::REMOTE_SITE_URL . '/tin-tuc/' . $term->slug . '/'; // Format link tin tức
+                    
+                    // Lấy danh mục con
+                    $children = $remote_db->get_results("SELECT t.name, t.slug FROM {$this->table_prefix}terms t JOIN {$this->table_prefix}term_taxonomy tt ON t.term_id = tt.term_id WHERE tt.parent = " . intval($term_id) . " ORDER BY t.name ASC LIMIT 5");
+                    if ($children) {
+                        $has_children = true;
+                        // CHÚ Ý CHỖ NÀY: Thêm thẻ <ul> vào children_html thay vì để trong hàm render
+                        $children_html .= '<ul class="list-unstyled ps-0 mb-0">';
+                        foreach($children as $child) {
+                            $children_html .= '<li><a href="'.self::REMOTE_SITE_URL.'/tin-tuc/'.esc_attr($child->slug).'/" class="text-reset text-decoration-none d-block py-2">'.esc_html($child->name).'</a></li>';
+                        }
+                        $children_html .= '</ul>';
+                    }
+                }
+            }
+
+            $mega_items[] = [
+                'title'         => $term_name,
+                'link'          => $term_link,
+                'has_children'  => $has_children,
+                'children_html' => $children_html,
+                'image_url'     => $image_id ? $this->get_image_url_by_id($remote_db, $image_id) : '',
+                'icon_url'      => $icon_id ? $this->get_image_url_by_id($remote_db, $icon_id) : '',
+                'badge'         => $badge,
+                'desc'          => $desc
+            ];
+        }
+
+        // Lưu Cache 12 tiếng để web load mượt
+        set_transient($cache_key, $mega_items, 12 * HOUR_IN_SECONDS);
+        
+        return $mega_items;
+    }
 
 }
 
@@ -1408,84 +1512,98 @@ if ( ! function_exists( 'render_supplier_cats_recursive' ) ) {
     }
 }
 // Trong functions.php
-
 add_action( 'wp_ajax_load_more_partners', 'ajax_load_more_partners' );
 add_action( 'wp_ajax_nopriv_load_more_partners', 'ajax_load_more_partners' );
 
 function ajax_load_more_partners() {
-    // 1. Lấy Supplier ID
     $supplier_id = isset($_POST['supplier_id']) ? intval($_POST['supplier_id']) : 0;
-    
-    // 2. Lấy Offset
-    $offset = isset($_POST['offset']) ? intval($_POST['offset']) : 0;
-    
-    // 3. QUAN TRỌNG: Kiểm tra kỹ biến limit
-    // Nếu JS gửi '5' -> lấy 5. Nếu không gửi -> lấy 15.
-    if ( isset($_POST['limit']) ) {
-        $limit = intval($_POST['limit']);
-    } else {
-        $limit = 15; // Mặc định nếu không nhận được gì
-    }
+    $offset      = isset($_POST['offset']) ? intval($_POST['offset']) : 0;
+    $limit       = isset($_POST['limit']) ? intval($_POST['limit']) : 15;
 
     if ( ! $supplier_id ) wp_send_json_error('Missing Supplier ID');
 
-    $fetcher = new Dezon_Remote_Project_Fetcher();
+    // --- SỬA LẠI LOGIC LẤY GROUP ---
+    $all_partner_ids = [];
     
-    // 4. Gọi hàm fetch (Lúc này $limit bắt buộc phải đúng)
-    $partners = $fetcher->get_partners_via_supplier_projects( $supplier_id, $limit, $offset );
+    // Lấy field Group
+    $group_data = get_field('supplier_partners', $supplier_id);
+    
+    // Lấy field 'partner' bên trong Group
+    if ( $group_data && !empty($group_data['partner']) ) {
+        $all_partner_ids = $group_data['partner'];
+        if ( !is_array($all_partner_ids) ) {
+            $all_partner_ids = [ $all_partner_ids ];
+        }
+    }
+    
+    $total_partners  = count($all_partner_ids);
 
-    // Logic kiểm tra còn data
-    $has_more = (count($partners) >= $limit);
+    // Cắt mảng (Pagination Logic)
+    $sliced_ids = array_slice($all_partner_ids, $offset, $limit);
+    $has_more = ($offset + $limit) < $total_partners;
 
     $html_items = [];
-    if ( ! empty( $partners ) ) {
-        foreach ( $partners as $p ) {
-            ob_start();
-            ?>
-            <a href="<?php echo esc_url($p['link']); ?>" target="_blank" class="text-reset partner-item-anim" title="<?php echo esc_attr($p['title']); ?>">
-                <div class="d-flex mb-3 align-items-center">
-                    <img src="<?php echo esc_url($p['logo']); ?>" 
-                         style="width: auto; height: 20px; object-fit: contain;" 
-                         alt="<?php echo esc_attr($p['title']); ?>">
-                    <p class="mb-0 ms-2 text-truncate"><?php echo esc_html($p['title']); ?></p>
-                </div>
-            </a>
-            <?php
-            $html_items[] = ob_get_clean();
+    
+    if ( ! empty( $sliced_ids ) ) {
+        foreach ( $sliced_ids as $term_id ) {
+            $term = get_term( $term_id );
+            
+            if ( ! is_wp_error( $term ) && $term ) {
+                $link = get_term_link( $term );
+                
+                // Lấy ảnh Brand
+                $thumbnail_id = get_term_meta( $term_id, 'thumbnail_id', true );
+                $logo_url = $thumbnail_id ? wp_get_attachment_image_url( $thumbnail_id, 'full' ) : '';
+
+                ob_start();
+                ?>
+                <a href="<?php echo esc_url($link); ?>" target="_blank" class="text-reset partner-item-anim" title="<?php echo esc_attr($term->name); ?>">
+                    <div class="d-flex mb-3 align-items-center">
+                        <?php if ($logo_url): ?>
+                        <img src="<?php echo esc_url($logo_url); ?>" 
+                             style="width: auto; height: 20px; object-fit: contain;" 
+                             alt="<?php echo esc_attr($term->name); ?>">
+                        <?php endif; ?>
+                        <p class="mb-0 ms-2 text-truncate"><?php echo esc_html($term->name); ?></p>
+                    </div>
+                </a>
+                <?php
+                $html_items[] = ob_get_clean();
+            }
         }
         
         wp_send_json_success([
             'items'    => $html_items,
             'has_more' => $has_more,
-            'loaded'   => count($partners),
-            'debug_limit' => $limit // Trả về limit để bạn check trong Network tab
+            'loaded'   => count($sliced_ids),
         ]);
     } else {
-        wp_send_json_error('No partners found');
+        wp_send_json_success([
+            'items'    => [],
+            'has_more' => false,
+            'loaded'   => 0
+        ]);
     }
     
     wp_die();
 }
-
 /**
  * Đổ dữ liệu vào Select Field: related_remote_project_id
- * Logic: Chỉ lấy các Project có liên kết với Supplier đang sửa
+ * Logic MỚI: Lấy TẤT CẢ Project từ remote site
  */
 add_filter('acf/load_field/name=related_remote_project_id', function( $field ) {
     
-    // 1. Chỉ chạy trong trang Admin và phải có ID bài viết đang sửa
-    if ( ! is_admin() || ! isset($_GET['post']) ) {
+    // 1. Chỉ chạy trong trang Admin
+    if ( ! is_admin() ) {
         return $field;
     }
 
-    $current_supplier_id = intval($_GET['post']);
-
-    // 2. Gọi class Fetcher để lấy dữ liệu
+    // 2. Gọi class Fetcher
     if ( class_exists('Dezon_Remote_Project_Fetcher') ) {
         $fetcher = new Dezon_Remote_Project_Fetcher();
         
-        // Gọi hàm vừa viết ở Bước 2
-        $projects = $fetcher->get_remote_projects_linked_to_supplier( $current_supplier_id );
+        // --- THAY ĐỔI Ở ĐÂY: Gọi hàm mới lấy tất cả ---
+        $projects = $fetcher->get_all_remote_projects();
         
         // 3. Đổ dữ liệu vào field
         $field['choices'] = array();
@@ -1493,7 +1611,7 @@ add_filter('acf/load_field/name=related_remote_project_id', function( $field ) {
         if ( ! empty( $projects ) ) {
             $field['choices'] = $projects;
         } else {
-            $field['choices'][''] = 'Chưa có dự án nào bên Dezon liên kết với Supplier này';
+            $field['choices'][''] = 'Không tìm thấy dự án nào bên Dezon';
         }
     }
 
@@ -1601,8 +1719,8 @@ add_action('save_post', function($post_id) {
  * 1. Helper: Lấy danh sách Tài liệu từ Repeater (Có hỗ trợ Icon động)
  */
 function get_supplier_documents_flattened( $supplier_id ) {
-    // Thêm hậu tố _v2 để làm mới cache tránh xung đột cấu trúc cũ
-    $cache_key = 'supplier_documents_list_v2_' . $supplier_id;
+    // Đổi tên cache key thành _v5 để xóa cache cũ
+    $cache_key = 'supplier_documents_list_v5_' . $supplier_id;
     $documents = get_transient( $cache_key );
 
     if ( false === $documents ) {
@@ -1611,39 +1729,57 @@ function get_supplier_documents_flattened( $supplier_id ) {
 
         if ( $repeater ) {
             foreach ( $repeater as $row ) {
-                // 1. Xử lý File URL
-                $file_url = '';
-                $file_title = '';
+                $file_data = $row['file']; // Bây giờ đây là một MẢNG (Array)
                 
-                if ( is_array($row['file']) ) {
-                    $file_url   = $row['file']['url'];
-                    $file_title = $row['file']['title']; // Lấy tiêu đề file gốc
-                } else {
-                    $file_url   = $row['file'];
-                    $file_title = basename($file_url);
-                }
+                // Kiểm tra kỹ xem có dữ liệu file không
+                if ( ! $file_data ) continue;
 
-                // 2. Xử lý Icon (Ảnh đại diện)
-                $icon_url = '';
-                if ( ! empty($row['icon']) ) {
-                    // Nếu return là Array
-                    if ( is_array($row['icon']) ) {
-                        $icon_url = $row['icon']['url']; // Hoặc ['sizes']['thumbnail'] nếu muốn nhẹ
+                $file_url   = '';
+                $file_title = '';
+
+                // --- XỬ LÝ LOGIC LẤY TÊN ---
+                if ( is_array($file_data) ) {
+                    $file_url = $file_data['url'];
+                    
+                    // 1. Lấy Title từ Media Library (Ô "Title" khi bạn sửa ảnh/file trong admin)
+                    $media_title = isset($file_data['title']) ? $file_data['title'] : '';
+                    $filename    = isset($file_data['filename']) ? $file_data['filename'] : '';
+
+                    // 2. Logic thông minh:
+                    // Nếu có Title trong Media Library -> Dùng nó.
+                    // Nếu không có Title -> Lấy tên file gốc, xóa gạch ngang, viết hoa chữ cái đầu.
+                    if ( ! empty($media_title) ) {
+                        $file_title = $media_title;
                     } else {
-                        $icon_url = $row['icon']; // Nếu return là URL
+                        // Fallback: Tự động làm đẹp từ tên file gốc
+                        $name_no_ext = pathinfo($filename, PATHINFO_FILENAME);
+                        $file_title = str_replace(['-', '_'], ' ', $name_no_ext); 
+                        // Có thể thêm ucwords() nếu muốn viết hoa chữ cái đầu mỗi từ:
+                        // $file_title = ucwords(str_replace(['-', '_'], ' ', $name_no_ext));
                     }
                 } 
-                // Fallback: Nếu không chọn icon thì dùng icon PDF mặc định của theme
+                // Fallback: Nếu lỡ quên chưa chỉnh ACF mà vẫn để là URL (String)
+                elseif ( is_string($file_data) ) {
+                    $file_url = $file_data;
+                    $file_title = str_replace(['-', '_'], ' ', pathinfo($file_data, PATHINFO_FILENAME));
+                }
+
+                // --- XỬ LÝ ICON (Giữ nguyên) ---
+                $icon_url = '';
+                if ( ! empty($row['icon']) ) {
+                    $icon_url = is_array($row['icon']) ? $row['icon']['url'] : $row['icon'];
+                } 
                 if ( empty($icon_url) ) {
                     $icon_url = get_template_directory_uri() . '/assets/images/img-pdf.jpg';
                 }
 
+                // Đẩy vào mảng kết quả
                 if ( $file_url ) {
                     $documents[] = [
                         'title' => $file_title,
                         'url'   => $file_url,
-                        'icon'  => $icon_url, // URL icon đã xử lý
-                        'cate'  => $row['cate']
+                        'icon'  => $icon_url,
+                        'cate'  => isset($row['cate']) ? $row['cate'] : ''
                     ];
                 }
             }
@@ -1676,12 +1812,13 @@ function ajax_load_more_documents() {
             ob_start();
             ?>
             <div class="list_partner mb-xl-0 cl-blue doc-item-anim mb-3">
-                <a href="<?php echo esc_url($doc['url']); ?>" target="_blank" class="text-reset" title="Tải xuống: <?php echo esc_attr($doc['title']); ?>">
+                <a href="<?php echo esc_url($doc['url']); ?>" target="_blank" class="text-reset" title="<?php echo esc_attr($doc['title']); ?>">
                     <div class="d-flex mb-3 align-items-center">
-                        <img src="<?php echo esc_url($doc['icon']); ?>" 
-                             style="width: auto; height: 20px; object-fit: contain;" 
-                             alt="Icon">
-                        <p class="mb-0 ms-2 text-truncate"><?php echo esc_html($doc['title']); ?></p>
+                        <img src="<?php echo get_template_directory_uri(); ?>/assets/images/img-pdf.jpg" 
+                            style="width: auto; height: 20px; object-fit: contain;" 
+                            alt="Icon">
+                        
+                        <p class="mb-0 ms-2 text-truncate"><?php echo esc_html( $doc['title'] ); ?></p>
                     </div>
                 </a>
             </div>
@@ -1943,22 +2080,74 @@ function get_decox_reading_time( $post_id = null ) {
 }
 
 
+
+
+function get_supplier_videos_flattened($supplier_id) {
+    $cache_key = 'supplier_videos_flat_' . $supplier_id;
+    $all_videos = get_transient($cache_key);
+
+    if (false === $all_videos) {
+        $video_groups = get_field('video_supplier', $supplier_id);
+        $all_videos = [];
+
+        if ($video_groups && is_array($video_groups)) {
+            foreach ($video_groups as $group) {
+                $videos = isset($group['video']) ? $group['video'] : [];
+
+                if ($videos && is_array($videos)) {
+                    foreach ($videos as $row) {
+                        $item = isset($row['manual_content']) ? $row['manual_content'] : [];
+                        if (empty($item)) continue;
+
+                        $title = isset($item['title']) ? $item['title'] : '';
+                        $minute = isset($item['minute']) ? $item['minute'] : '';
+                        $image_data = isset($item['image']) ? $item['image'] : '';
+                        $video_url = isset($item['link_video']) ? $item['link_video'] : '#';
+
+                        $img_url = '';
+                        if (is_array($image_data)) {
+                            $img_url = isset($image_data['url']) ? $image_data['url'] : '';
+                        } else {
+                            $img_url = $image_data;
+                        }
+                        
+                        if (empty($img_url)) {
+                            $img_url = get_template_directory_uri() . '/assets/images/gallery1.jpg';
+                        }
+
+                        $all_videos[] = [
+                            'title'     => $title,
+                            'minute'    => $minute,
+                            'video_url' => $video_url,
+                            'img_url'   => $img_url
+                        ];
+                    }
+                }
+            }
+        }
+        set_transient($cache_key, $all_videos, 12 * HOUR_IN_SECONDS);
+    }
+    return $all_videos;
+}
+
+add_action('save_post', function($post_id) {
+    delete_transient('supplier_videos_flat_' . $post_id);
+});
+
 add_action('wp_ajax_load_more_videos', 'load_more_videos_ajax_handler');
 add_action('wp_ajax_nopriv_load_more_videos', 'load_more_videos_ajax_handler');
 
 function load_more_videos_ajax_handler() {
     $supplier_id = isset($_POST['supplier_id']) ? intval($_POST['supplier_id']) : 0;
     $offset      = isset($_POST['offset']) ? intval($_POST['offset']) : 0;
-    $limit       = 4; // Số lượng load thêm
+    $limit       = 4; 
 
-    // Lấy dữ liệu Repeater
-    $all_videos = get_field('video', $supplier_id);
+    $all_videos = get_supplier_videos_flattened($supplier_id);
 
-    if (empty($all_videos) || !is_array($all_videos)) {
-        wp_send_json_error('Không có dữ liệu.');
+    if (empty($all_videos)) {
+        wp_send_json_error();
     }
 
-    // Cắt mảng
     $videos_to_show = array_slice($all_videos, $offset, $limit);
     $total_videos   = count($all_videos);
     $has_more       = ($offset + $limit) < $total_videos;
@@ -1966,59 +2155,25 @@ function load_more_videos_ajax_handler() {
     $html_response = [];
 
     if (!empty($videos_to_show)) {
-        foreach ($videos_to_show as $row) {
-            // --- LOGIC PHP XỬ LÝ DỮ LIỆU ---
-            $item = isset($row['manual_content']) ? $row['manual_content'] : [];
-            if (empty($item)) continue;
-
-            $title  = isset($item['title']) ? $item['title'] : '';
-            $minute = isset($item['minute']) ? $item['minute'] : '';
-            $image  = isset($item['image']) ? $item['image'] : '';
-            
-            // Xử lý Link Video
-            $type = isset($item['manual_type']) ? $item['manual_type'] : '';
-            $video_url = '#';
-
-            if ($type === 'link') {
-                $video_url = isset($item['link_video']) ? $item['link_video'] : '#';
-            } elseif ($type === 'file') {
-                $file_data = isset($item['file_video']) ? $item['file_video'] : '';
-                if (is_array($file_data)) {
-                    $video_url = isset($file_data['url']) ? $file_data['url'] : '#';
-                } else {
-                    $video_url = $file_data;
-                }
-            }
-
-            // Xử lý Ảnh Thumbnail
-            $img_url = '';
-            if (is_array($image)) {
-                $img_url = isset($image['url']) ? $image['url'] : '';
-            } else {
-                $img_url = $image;
-            }
-            // Ảnh mặc định
-            if (empty($img_url)) $img_url = get_template_directory_uri() . '/assets/images/gallery1.jpg'; 
-            
-            // --- BẮT ĐẦU HTML ITEM (ĐÃ CẬP NHẬT CẤU TRÚC MỚI) ---
+        foreach ($videos_to_show as $vid) {
             ob_start();
             ?>
             <div class="col-lg-3">
                 <div class="item">
                     <figure class="mb-0 position-relative rounded-3 overflow-hidden">
-                        <a href="<?php echo esc_url($video_url); ?>" 
-                           class="d-block w-100 position-relative ratio-2-3"
+                        <a href="<?php echo esc_url($vid['video_url']); ?>" 
+                           class="d-block w-100 position-relative ratio-9-16"
                            data-fancybox="supplier-video" 
-                           data-caption="<?php echo esc_attr($title); ?>">
+                           data-caption="<?php echo esc_attr($vid['title']); ?>">
                            
-                            <img src="<?php echo esc_url($img_url); ?>"
+                            <img src="<?php echo esc_url($vid['img_url']); ?>"
                                  class="position-absolute top-0 start-0 w-100 h-100 object-fit-cover img-zoom-hover"
-                                 alt="<?php echo esc_attr($title); ?>">
+                                 alt="<?php echo esc_attr($vid['title']); ?>">
 
                             <div class="overlay-gradient-bottom">
-                                <h4 class="fs-24 fw-medium text-white mb-3 pe-auto" style="line-height: 1.4;">
+                                <h4 class="fs-18 fw-medium text-white mb-3 pe-auto" style="line-height: 1.4;">
                                     <span class="text-white text-decoration-none">
-                                        <?php echo esc_html($title); ?>
+                                        <?php echo esc_html($vid['title']); ?>
                                     </span>
                                 </h4>
 
@@ -2029,9 +2184,9 @@ function load_more_videos_ajax_handler() {
                                                 <i class="fa fa-play fs-12 ms-1"></i>
                                             </span>
                                         </li>
-                                        <?php if ($minute) : ?>
+                                        <?php if ($vid['minute']) : ?>
                                         <li>
-                                            <span class="time-badge"><?php echo esc_html($minute); ?> phút</span>
+                                            <span class="time-badge"><?php echo esc_html($vid['minute']); ?> phút</span>
                                         </li>
                                         <?php endif; ?>
                                     </ul>
@@ -2043,12 +2198,12 @@ function load_more_videos_ajax_handler() {
                                     </div>
                                 </div>
                             </div>
-                        </a> </figure>
+                        </a> 
+                    </figure>
                 </div>
             </div>
             <?php
             $html_response[] = ob_get_clean();
-            // --- KẾT THÚC HTML ITEM ---
         }
     }
 
@@ -2057,4 +2212,249 @@ function load_more_videos_ajax_handler() {
         'loaded'   => count($videos_to_show),
         'has_more' => $has_more
     ]);
+    
+    wp_die();
+}
+// Thêm vào functions.php
+
+add_action( 'wp_ajax_load_more_remote_studios', 'ajax_load_more_remote_studios' );
+add_action( 'wp_ajax_nopriv_load_more_remote_studios', 'ajax_load_more_remote_studios' );
+
+function ajax_load_more_remote_studios() {
+    $supplier_id = isset($_POST['supplier_id']) ? intval($_POST['supplier_id']) : 0;
+    $offset      = isset($_POST['offset']) ? intval($_POST['offset']) : 0;
+    $limit       = isset($_POST['limit']) ? intval($_POST['limit']) : 15;
+
+    if ( ! $supplier_id ) wp_send_json_error();
+
+    if ( class_exists('Dezon_Remote_Project_Fetcher') ) {
+        $fetcher = new Dezon_Remote_Project_Fetcher();
+        
+        // Lấy dư 1 item để check has_more
+        $partners = $fetcher->get_partners_via_supplier_projects( $supplier_id, $limit + 1, $offset );
+        
+        $has_more = false;
+        if ( count($partners) > $limit ) {
+            $has_more = true;
+            array_pop($partners); 
+        }
+
+        $html_items = [];
+        if ( ! empty( $partners ) ) {
+            foreach ( $partners as $p ) {
+                $logo_src = $p['logo'] ? $p['logo'] : get_template_directory_uri() . '/assets/images/partner-default.png';
+                ob_start();
+                ?>
+                <a href="<?php echo esc_url($p['link']); ?>" target="_blank" class="text-reset partner-item-anim" title="<?php echo esc_attr($p['title']); ?>">
+                    <div class="d-flex mb-3 align-items-center">
+                        <?php if($p['logo']): ?>
+                            <img src="<?php echo esc_url($logo_src); ?>" style="width: auto; height: 20px; object-fit: contain;" alt="<?php echo esc_attr($p['title']); ?>">
+                        <?php else: ?>
+                             <span class="fw-bold fs-14" style="width: 20px; display:inline-block;">•</span>
+                        <?php endif; ?>
+                        <p class="mb-0 ms-2 text-truncate"><?php echo esc_html($p['title']); ?></p>
+                    </div>
+                </a>
+                <?php
+                $html_items[] = ob_get_clean();
+            }
+        }
+
+        wp_send_json_success([
+            'items'    => $html_items,
+            'has_more' => $has_more,
+            'loaded'   => count($partners),
+        ]);
+    }
+
+    wp_die();
+}
+
+class Dezon_Mega_Menu_Walker extends Walker_Nav_Menu {
+    function start_el(&$output, $item, $depth = 0, $args = array(), $id = 0) {
+        $indent = ( $depth ) ? str_repeat( "\t", $depth ) : '';
+        $classes = empty( $item->classes ) ? array() : (array) $item->classes;
+        
+        if ($item->title == 'Tin tức') { 
+            if (!in_array('menu-item-has-children', $classes)) {
+                $classes[] = 'menu-item-has-children';
+            }
+        }
+
+        $class_names = join( ' ', apply_filters( 'nav_menu_css_class', array_filter( $classes ), $item, $args ) );
+        $class_names = $class_names ? ' class="' . esc_attr( $class_names ) . '"' : '';
+        $id = apply_filters( 'nav_menu_item_id', 'menu-item-'. $item->ID, $item, $args );
+        $id = $id ? ' id="' . esc_attr( $id ) . '"' : '';
+
+        $output .= $indent . '<li' . $id . $class_names .'>';
+
+        $atts = array();
+        $atts['title']  = ! empty( $item->attr_title ) ? $item->attr_title : '';
+        $atts['target'] = ! empty( $item->target )     ? $item->target     : '';
+        $atts['rel']    = ! empty( $item->xfn )        ? $item->xfn        : '';
+        $atts['href']   = ! empty( $item->url )        ? $item->url        : '';
+
+        $atts = apply_filters( 'nav_menu_link_attributes', $atts, $item, $args );
+        $attributes = '';
+        foreach ( $atts as $attr => $value ) {
+            if ( ! empty( $value ) ) {
+                $value = ( 'href' === $attr ) ? esc_url( $value ) : esc_attr( $value );
+                $attributes .= ' ' . $attr . '="' . $value . '"';
+            }
+        }
+
+        $item_output = $args->before;
+        $item_output .= '<a'. $attributes .'>';
+        $item_output .= $args->link_before . apply_filters( 'the_title', $item->title, $item->ID ) . $args->link_after;
+        $item_output .= '</a>';
+        $item_output .= $args->after;
+
+        $output .= $item_output;
+    }
+
+    function end_el(&$output, $item, $depth = 0, $args = array()) {
+        if ($item->title == 'Tin tức') { 
+            
+            // GỌI TRỰC TIẾP DB BÊN DEZON.VN
+            $fetcher = new Dezon_Remote_Project_Fetcher();
+            $mega_items = $fetcher->get_remote_mega_menu_data();
+
+            if ($mega_items && !empty($mega_items)) {
+                // CHÚ Ý CHỖ NÀY: Thêm style="display: none;" hoặc class tương ứng nếu CSS cũ của bạn dùng nó để ẩn sub-menu khi chưa hover
+                $output .= '<div class="sub-menu"><div class="container"><div class="row gx-0">';
+                
+                // Cột Logo
+                $output .= '<div class="col-auto"><div style="opacity: 0; visibility: hidden;">';
+                $output .= '<a href="' . esc_url(home_url('/')) . '" class="logo_site"><img src="https://dezon.vn/wp-content/uploads/2025/12/logodezon.svg" class="img-fluid" alt=""></a>';
+                $output .= '</div></div>';
+
+                $output .= '<div class="col-lg"><div class="row gx-0">';
+
+                // 1. Cột Tabs
+                $output .= '<div class="col-md-4"><nav><div class="nav nav-tabs border-0 flex-column" role="tablist">';
+                
+                $first_has_content = $mega_items[0]['has_children'];
+                $first_has_image = !empty($mega_items[0]['image_url']);
+
+                foreach ($mega_items as $key => $m_item) {
+                    $tab_id = 'nav-mega-' . ($key + 1);
+                    $active_cls = ($key == 0) ? 'active' : '';
+                    $aria_sel = ($key == 0) ? 'true' : 'false';
+                    $head_tab_class = 'head-tab mb-2 d-flex align-items-center gap-2' . (!empty($m_item['badge']) ? ' new-tag' : '');
+
+                    // Thêm các class của Bootstrap để style giống mẫu
+                    $output .= '<a href="' . esc_url($m_item['link']) . '" class="nav-link border-0 text-start w-100 p-3 rounded-3 ' . $active_cls . '" id="' . $tab_id . '-tab" data-target-content="#' . $tab_id . '" data-image="' . esc_url($m_item['image_url']) . '" data-has-content="' . ($m_item['has_children'] ? 'true' : 'false') . '" data-has-image="' . (!empty($m_item['image_url']) ? 'true' : 'false') . '" aria-controls="' . $tab_id . '" aria-selected="' . $aria_sel . '">';
+                    $output .= '<div class="' . $head_tab_class . '">';
+                    if ($m_item['icon_url']) $output .= '<img src="' . esc_url($m_item['icon_url']) . '" style="width: 24px; height: 24px; object-fit: contain;" alt="">';
+                    $output .= '<h5 class="mb-0 fs-16 fw-500 mb-0">' . esc_html($m_item['title']) . '</h5>';
+                    if ($m_item['badge']) $output .= '<div class="new-mega ms-auto fs-12 px-2 py-1 rounded bg-light text-dark">' . esc_html($m_item['badge']) . '</div>';
+                    $output .= '</div>';
+                    if ($m_item['desc']) $output .= '<p class="mb-0 text-start text-muted fs-14">' . esc_html($m_item['desc']) . '</p>';
+                    $output .= '</a>';
+                }
+                $output .= '</div></nav></div>'; 
+
+                // Layout
+                $init_wrapper_cls = ($first_has_content && $first_has_image) ? 'col-md-8' : (($first_has_content) ? 'col-md-4' : (($first_has_image) ? 'col-md-4' : 'col-md-4 d-none'));
+                $init_list_cls = ($first_has_content && $first_has_image) ? 'col-md-6' : (($first_has_content) ? 'col-md-12' : 'd-none');
+                $init_img_cls = ($first_has_content && $first_has_image) ? 'col-md-6' : ((!$first_has_content && $first_has_image) ? 'col-md-12' : 'd-none');
+
+                // 2. Cột Danh mục con
+                $output .= '<div class="' . $init_wrapper_cls . '" id="mega-main-wrapper"><div class="wrap_content-mega h-100 p-3"><div class="row h-100">';
+                $output .= '<div class="' . $init_list_cls . '" id="mega-col-content"><div class="tab-content" id="nav-tabContent">';
+
+                foreach ($mega_items as $key => $m_item) {
+                    $tab_id = 'nav-mega-' . ($key + 1);
+                    $active_cls = ($key == 0) ? 'show active' : '';
+
+                    $output .= '<div class="tab-pane fade ' . $active_cls . '" id="' . $tab_id . '" role="tabpanel">';
+                    if ($m_item['has_children']) {
+                        $output .= '<span class="fs-12 fw-500 mb-3" style="color: #007AF1; display:block; margin-bottom:10px;">Tin nổi bật</span>';
+                        $output .= $m_item['children_html']; // Đã bao gồm thẻ <ul> ở trên
+                    }
+                    $output .= '</div>';
+                }
+                $output .= '</div></div>'; 
+
+                // 3. Cột Hình ảnh
+                $first_img = $mega_items[0]['image_url'];
+                $output .= '<div class="' . $init_img_cls . '" id="mega-col-image"><div class="h-100 w-100 rounded-3 overflow-hidden">';
+                $output .= '<img id="mega_menu_image_target" src="' . esc_url($first_img) . '" class="img-fluid w-100 h-100 object-fit-cover" alt="" style="' . (empty($first_img) ? 'display:none;' : '') . '">';
+                $output .= '</div></div>';
+
+                $output .= '</div></div></div>'; 
+                $output .= '</div></div></div></div>';
+            }
+        }
+        $output .= "</li>\n";
+    }
+}
+
+class Dezon_Mobile_Walker extends Walker_Nav_Menu {
+    function start_el(&$output, $item, $depth = 0, $args = array(), $id = 0) {
+        $indent = ( $depth ) ? str_repeat( "\t", $depth ) : '';
+        $classes = empty( $item->classes ) ? array() : (array) $item->classes;
+
+        if ($item->title == 'Tin tức') {
+            if (!in_array('menu-item-has-children', $classes)) {
+                $classes[] = 'menu-item-has-children';
+            }
+        }
+
+        $class_names = join( ' ', apply_filters( 'nav_menu_css_class', array_filter( $classes ), $item, $args ) );
+        $class_names = $class_names ? ' class="' . esc_attr( $class_names ) . '"' : '';
+        $id = apply_filters( 'nav_menu_item_id', 'menu-item-'. $item->ID, $item, $args );
+        $id = $id ? ' id="' . esc_attr( $id ) . '"' : '';
+
+        $output .= $indent . '<li' . $id . $class_names .'>';
+
+        $atts = array();
+        $atts['title']  = ! empty( $item->attr_title ) ? $item->attr_title : '';
+        $atts['target'] = ! empty( $item->target )     ? $item->target     : '';
+        $atts['rel']    = ! empty( $item->xfn )        ? $item->xfn        : '';
+        $atts['href']   = ! empty( $item->url )        ? $item->url        : '';
+
+        $atts = apply_filters( 'nav_menu_link_attributes', $atts, $item, $args );
+        $attributes = '';
+        foreach ( $atts as $attr => $value ) {
+            if ( ! empty( $value ) ) {
+                $value = ( 'href' === $attr ) ? esc_url( $value ) : esc_attr( $value );
+                $attributes .= ' ' . $attr . '="' . $value . '"';
+            }
+        }
+
+        $item_output = $args->before;
+        $item_output .= '<a'. $attributes .'>';
+        $item_output .= $args->link_before . apply_filters( 'the_title', $item->title, $item->ID ) . $args->link_after;
+        $item_output .= '</a>';
+        $item_output .= $args->after;
+
+        $output .= $item_output;
+    }
+
+    function end_el(&$output, $item, $depth = 0, $args = array()) {
+        if ($item->title == 'Tin tức') {
+            
+            $fetcher = new Dezon_Remote_Project_Fetcher();
+            $mega_items = $fetcher->get_remote_mega_menu_data();
+
+            if ($mega_items && !empty($mega_items)) {
+                $output .= '<div class="sub-menu">';
+                foreach ($mega_items as $m_item) {
+                    $head_tab_class = 'head-tab mb-2' . (!empty($m_item['badge']) ? ' new-tag' : '');
+
+                    $output .= '<a href="' . esc_url($m_item['link']) . '" class="sub-tab d-block text-decoration-none">';
+                    $output .= '<div class="' . $head_tab_class . '">';
+                    if ($m_item['icon_url']) $output .= '<img src="' . esc_url($m_item['icon_url']) . '" alt="">';
+                    $output .= '<h5 class="mb-0 fs-16 fw-500 mb-0">' . esc_html($m_item['title']) . '</h5>';
+                    if ($m_item['badge']) $output .= '<div class="new-mega ms-auto fs-12">' . esc_html($m_item['badge']) . '</div>';
+                    $output .= '</div>'; 
+                    if ($m_item['desc']) $output .= '<p class="mb-0 text-start">' . esc_html($m_item['desc']) . '</p>';
+                    $output .= '</a>'; 
+                }
+                $output .= '</div>'; 
+            }
+        }
+        $output .= "</li>\n";
+    }
 }

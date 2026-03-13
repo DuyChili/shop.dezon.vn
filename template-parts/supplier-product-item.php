@@ -24,10 +24,11 @@ if ( empty( $product ) || ! is_object( $product ) ) {
         </h4>
         
         <?php
-        $brands = get_the_terms( $product->get_id(), 'product_brand' ); // Thay 'product_brand' bằng slug taxonomy brand thực tế của bạn
-        if ( ! empty( $brands ) && ! is_wp_error( $brands ) ) {
-            $brand_name = $brands[0]->name;
-            echo '<p class="prod-brand">' . esc_html( $brand_name ) . '</p>';
+        // Lấy mô tả ngắn
+        $short_desc = $product->get_short_description();
+
+        if ( ! empty( $short_desc ) ) {
+            echo '<div class="prod-short-desc">' . wp_strip_all_tags( $short_desc ) . '</div>';
         }
         ?>
     </div>

@@ -211,7 +211,7 @@
     }
 
     .fs-18 {
-        font-size: 16px;
+        font-size: 20px;
     }
 
     .fs-16 {
@@ -6701,7 +6701,7 @@ body .btn:hover.btn-bgblack img {
     height: 100%;
     inset: 0;
     -o-object-fit: cover;
-    object-fit: cover;
+    object-fit: contain;
 }
 
 .product_detail .product_title {
@@ -9397,11 +9397,17 @@ html body .related-item-custom .title-area {
 /* Trạng thái thu gọn mặc định trên Desktop */
 .project_desc_wrapper.collapsed {
     max-height: 300px; 
+    overflow: hidden;
 }
 
 /* Trạng thái mở rộng (hiển thị full) */
 .project_desc_wrapper.expanded {
-    max-height: 2000000px; 
+    max-height: none;
+}
+
+.content-short .desc_overlay,
+.content-short .btn-view-more-container {
+    display: none !important;
 }
 /* Định dạng khung nội dung */
 .project_editor_content {
@@ -9759,7 +9765,7 @@ html body .related-item-custom .title-area {
 }
 
 .product-card .prod-title {
-    font-size: 13px;
+    font-size: 16px;
     font-weight: 600;
     color: var(--Greyscale-900);
     margin-bottom: 4px;
@@ -9807,7 +9813,7 @@ html body .related-item-custom .title-area {
 }
 
 .overlay-gradient-bottom {
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, transparent 100%);
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.5) 70%, rgba(0, 0, 0, 0) 100%); color: #fff; pointer-events: none;
     pointer-events: none; 
     position: absolute;
     bottom: 0;
@@ -10175,4 +10181,165 @@ html body .related-item-custom .title-area {
 .fancybox__content {
     opacity: 1 !important;
     visibility: visible !important;
+}
+
+.prod-short-desc {
+    display: -webkit-box;
+    -webkit-line-clamp: 2; 
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.single-supplier .pb-5{
+    padding-bottom: 60px !important;
+}
+
+.ratio-9-16 {
+    padding-bottom: 177.78%; 
+}
+
+.ratio-9-16 img {
+    object-fit: cover; 
+}
+
+@media (max-width: 991px) {
+.desc-supp .project-content{
+    margin-bottom: 0px !important ;
+}
+.single-supplier .pb-5{
+    padding-bottom: 48px !important;
+}
+.supplier_menu ul li a{
+    font-size: 12px !important;
+}
+}
+
+/* CSS cho Logo 1:1 */
+.logo-square-box {
+    position: relative;
+    width: 100%;
+    padding-bottom: 100%;
+    overflow: hidden;
+    background-color: #fff; 
+}
+
+.logo-square-box img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+
+.supplier_menu {
+    width: 100%;
+    overflow: hidden; 
+}
+
+.supplier_menu .scroll-menu {
+    display: flex;   
+    flex-wrap: nowrap;    
+    overflow-x: auto;       
+    -webkit-overflow-scrolling: touch; 
+
+    padding-left: 0;
+    margin-bottom: 0;
+    list-style: none;
+    
+    scrollbar-width: none;  
+    -ms-overflow-style: none;  
+}
+
+.supplier_menu .scroll-menu::-webkit-scrollbar {
+    display: none;
+}
+
+.supplier_menu .scroll-menu li {
+    flex: 0 0 auto;         
+    white-space: nowrap;      
+}
+
+.supplier_menu .scroll-menu li a {
+    display: block;
+}
+
+.list_partner .d-flex img{
+    width: 20px !important;
+    height: 20px !important;
+    object-fit: contain !important; 
+    object-position: center !important;
+}
+
+#supplier-product-list .prod-title a, .product_detail .product_title {
+    text-transform: lowercase;
+    display: inline-block; /* Bắt buộc để ::first-letter hoạt động trên thẻ a */
+}
+
+/* 2. Chỉ viết hoa chữ cái đầu tiên */
+#supplier-product-list .prod-title a::first-letter, .product_detail .product_title::first-letter {
+    text-transform: uppercase;
+}
+
+/* --- Mobile Filter Styles --- */
+.mobile-filter-wrapper .mobile-cat-toggle {
+    background-color: #fff;
+    border: 1px solid #E5E5E5;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 14px;
+    color: var(--Greyscale-900);
+    outline: none;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+/* Hiệu ứng xoay mũi tên khi mở */
+.mobile-filter-wrapper .mobile-cat-toggle[aria-expanded="true"] .fa-chevron-down {
+    transform: rotate(180deg);
+}
+
+.mobile-filter-wrapper .mobile-cat-body {
+    background: #fff;
+    border: 1px solid #E5E5E5;
+    border-top: none;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    padding: 0;
+    margin-top: -2px; /* Dính liền với nút trên */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* Style lại list trong mobile cho gọn */
+ul.mobile-list-style {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+ul.mobile-list-style li a {
+    padding: 10px 16px;
+    border-bottom: 1px solid #f5f5f5;
+    display: flex;
+    justify-content: space-between;
+    color: var(--Greyscale-600);
+    font-size: 14px;
+}
+
+ul.mobile-list-style li:last-child a {
+    border-bottom: none;
+}
+
+ul.mobile-list-style li.active a {
+    background-color: #F5F5F5;
+    color: var(--Greyscale-900);
+    font-weight: bold;
+}
+
+/* Ẩn cấp con thụt đầu dòng quá nhiều trên mobile nếu cần */
+ul.mobile-list-style .sub-menu {
+    background-color: #fafafa;
 }
